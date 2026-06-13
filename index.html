@@ -1,126 +1,4 @@
-: var(--text-muted); flex-shrink: 0; }
-
-  /* ── Chips ── */
-  .chip {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
-    border: 1px solid; white-space: nowrap;
-  }
-
-  /* ── Detail ── */
-  #detail-view { padding-bottom: 24px; }
-  #back-btn {
-    display: flex; align-items: center; gap: 6px;
-    background: none; border: none; color: var(--gold);
-    font-family: 'Press Start 2P', monospace; font-size: 9px;
-    padding: 14px 16px; cursor: pointer; width: 100%;
-  }
-  .detail-hero {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 16px; position: relative;
-  }
-  .detail-hero-bg {
-    position: absolute; inset: 0; opacity: .06;
-    background: radial-gradient(circle at center, var(--el-color, var(--gold)) 0%, transparent 70%);
-  }
-  .detail-sprite {
-    image-rendering: pixelated; max-height: 110px; max-width: 150px;
-    position: relative; z-index: 1;
-  }
-  .detail-name {
-    font-family: 'Press Start 2P', monospace; font-size: 10px;
-    color: var(--gold); margin-top: 10px; text-align: center;
-    line-height: 1.6; position: relative; z-index: 1;
-  }
-  .detail-id { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-  .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
-  .detail-section { padding: 0 16px 20px; }
-  .section-header {
-    display: flex; align-items: center; gap: 7px;
-    margin-bottom: 10px;
-  }
-  .section-bar { width: 3px; height: 14px; background: var(--gold); border-radius: 2px; }
-  .section-title {
-    font-family: 'Press Start 2P', monospace; font-size: 8px;
-    color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;
-  }
-
-  /* Stats table */
-  .stats-card {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 8px; overflow: hidden;
-  }
-  .stat-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 9px 14px; border-bottom: 1px solid var(--divider);
-  }
-  .stat-row:last-child { border-bottom: none; }
-  .stat-label { font-size: 13px; color: var(--text-2); }
-  .stat-value { font-size: 13px; font-weight: 600; color: var(--text-1); text-align: right; }
-
-  /* Attr grid */
-  .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .attr-box {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 6px;
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-  }
-  .attr-key { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold); }
-  .attr-val { font-size: 18px; font-weight: 700; color: var(--text-1); }
-
-  /* Elemental bars */
-  .el-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-  .el-label { width: 72px; font-size: 11px; font-weight: 500; flex-shrink: 0; }
-  .el-bar-bg { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
-  .el-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
-  .el-pct { width: 38px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text-2); flex-shrink: 0; }
-
-  /* Drops */
-  .drop-row {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 8px; padding: 9px 10px; margin-bottom: 7px;
-  }
-  .drop-icon-box {
-    width: 40px; height: 40px; flex-shrink: 0;
-    background: var(--bg-deep); border: 1px solid var(--border);
-    border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    overflow: hidden; font-size: 16px;
-  }
-  .drop-icon-box img { image-rendering: pixelated; max-width: 32px; max-height: 32px; }
-  .drop-info { flex: 1; min-width: 0; }
-  .drop-name { font-size: 12px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .drop-bar-wrap { margin-top: 4px; }
-  .drop-bar-bg { height: 4px; background: var(--bg-elevated); border-radius: 2px; overflow: hidden; }
-  .drop-bar-fill { height: 100%; border-radius: 2px; }
-  .drop-rate { font-size: 11px; font-weight: 600; flex-shrink: 0; }
-
-  /* Spawn maps */
-  .map-row {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 8px; padding: 9px 10px; margin-bottom: 7px;
-  }
-  .map-thumb {
-    width: 60px; height: 60px; flex-shrink: 0;
-    background: var(--bg-deep); border: 1px solid var(--border);
-    border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px;
-  }
-  .map-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .map-info { flex: 1; }
-  .map-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
-  .map-meta { font-size: 11px; color: var(--text-2); margin-top: 3px; }
-  .map-type-badge {
-    font-size: 10px; color: var(--text-muted); padding: 3px 7px;
-    background: var(--bg-elevated); border: 1px solid var(--border);
-    border-radius: 4px; flex-shrink: 0;
-  }
-
-  /* Mode chips */
-  .mode-chip {
-    display: inline-block; padding: 5px 10px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 4px; font-size: 11px; color: var(--text-<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -588,7 +466,174 @@ const ITEM_RANGES = [
 const FETCH_MODES = [
   { name: 'direct',     build: (url) => url },
   { name: 'codetabs',   build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` },
-  { name: 'allorigins', build: (url) => `https://apipartiel non sauvegardé', e);
+  { name: 'allorigins', build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+];
+// Index du mode qui a fonctionné en dernier (on l'essaie en premier la prochaine fois)
+let preferredModeIndex = 0;
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+let DB = { monsters: [], items: [] };
+let ADMIN = { enabled: false, globalRateMult: 1, mvpRateMult: 1 };
+let state = {
+  tab: 'monsters',
+  filtered: [],
+  query: '',
+  filter: null,
+  inDetail: false,
+  // Pile de navigation pour pouvoir faire "Retour" depuis un drop -> item -> monstre
+  navStack: [], // [{type:'monster'|'item', id}]
+  currentView: null, // {type, id}
+};
+
+function loadAdmin() {
+  try {
+    const raw = localStorage.getItem(ADMIN_KEY);
+    if (raw) ADMIN = { ...ADMIN, ...JSON.parse(raw) };
+  } catch (e) {}
+}
+function saveAdmin() {
+  try { localStorage.setItem(ADMIN_KEY, JSON.stringify(ADMIN)); } catch (e) {}
+}
+function isMvp(m) {
+  return !!(m.skills?.mode || []).includes('mvp');
+}
+function adjustedRate(monster, rate) {
+  const mult = isMvp(monster) ? ADMIN.mvpRateMult : ADMIN.globalRateMult;
+  return Math.min(rate * mult, 100);
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS - traduction / couleurs
+// ════════════════════════════════════════════════════════════════════════════
+const EL_FR   = { fire:'Feu', water:'Eau', wind:'Vent', earth:'Terre', holy:'Sacré',
+                   shadow:'Ombre', poison:'Poison', undead:'Mort-vivant', ghost:'Fantôme', neutral:'Neutre' };
+const EL_COLOR= { fire:'#E84040', water:'#4096E8', wind:'#48C774', earth:'#A0804A',
+                   holy:'#FFF08A', shadow:'#9B59B6', poison:'#2ECC71', undead:'#95A5A6',
+                   ghost:'#7F8C8D', neutral:'#BDC3C7' };
+const EL_ICON = { fire:'🔥', water:'💧', wind:'🌀', earth:'🌿', holy:'✨',
+                   shadow:'🌑', poison:'☠', undead:'💀', ghost:'👻', neutral:'⬜' };
+const RACE_FR  = { angel:'Ange', demihuman:'Demi-humain', 'demi-human':'Demi-humain',
+                    dragon:'Dragon', formless:'Sans forme', insect:'Insecte',
+                    plant:'Plante', undead:'Mort-vivant', brute:'Brute', fish:'Poisson' };
+const RACE_COLOR={ angel:'#FFF08A', demihuman:'#E8A040', 'demi-human':'#E8A040',
+                    dragon:'#E84040', formless:'#BDC3C7', insect:'#48C774',
+                    plant:'#27AE60', undead:'#95A5A6', brute:'#A0804A', fish:'#4096E8' };
+const TYPE_COLOR={ weapon:'#E84040', armor:'#4A90D9', card:'#F5A623',
+                    usable:'#48C774', etc:'#8888AA', ammo:'#BDC3C7' };
+const TYPE_FR  = { weapon:'Arme', armor:'Armure', card:'Carte',
+                    usable:'Consommable', etc:'Divers', ammo:'Munition' };
+
+function elColor(e){ return EL_COLOR[e?.toLowerCase()] || '#BDC3C7'; }
+function elFr(e)   { return EL_FR[e?.toLowerCase()] || e || 'Neutre'; }
+function raceFr(r) { return RACE_FR[r?.toLowerCase()] || r; }
+function raceColor(r){ return RACE_COLOR[r?.toLowerCase()] || '#8888AA'; }
+function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
+function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
+function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function modesFr(m) {
+  const map = { aggressive:'Agressif', changes_target_if_attacked:'Change de cible si attaqué',
+    assists:'Appelle des alliés', cast_sensor_idle:'Détecte les sorts',
+    detector:'Détecteur', boss:'Boss', mvp:'MVP', looter:'Looteur', plant:'Immobile' };
+  return map[m] || displayName(m);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// INDEXING - scan RagnaAPI une fois, cache localStorage
+// ════════════════════════════════════════════════════════════════════════════
+function buildIdList(ranges) {
+  const ids = [];
+  for (const [start, end] of ranges) {
+    for (let i = start; i <= end; i++) ids.push(i);
+  }
+  return ids;
+}
+
+// Essaie chaque mode dans l'ordre (en commençant par le dernier qui a marché),
+// avec un petit délai entre tentatives pour ne pas se faire bannir des proxys.
+async function fetchOne(kind, id) {
+  const url = `${API}/${kind}/${id}`;
+  const order = [...FETCH_MODES.keys()].sort((a, b) =>
+    a === preferredModeIndex ? -1 : b === preferredModeIndex ? 1 : 0);
+
+  for (const idx of order) {
+    const mode = FETCH_MODES[idx];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(mode.build(url), { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) {
+        if (res.status === 404) return { notFound: true };
+        continue; // 4xx/5xx -> essaie le mode suivant
+      }
+      const data = await res.json();
+      if (kind === 'monsters' && !data.monster_id) continue;
+      if (kind === 'items' && !data.item_id && !data.name) continue;
+      preferredModeIndex = idx; // ce mode fonctionne, on le privilégie
+      return { data };
+    } catch (e) {
+      clearTimeout(timer);
+      continue; // timeout ou erreur réseau -> essaie le mode suivant
+    }
+  }
+  return { error: true };
+}
+
+async function scanWithConcurrency(kind, ids, onProgress, onBatchDone) {
+  const results = [];
+  const notFound = [];
+  const failed = [];
+  let cursor = 0;
+  let done = 0;
+  let sinceLastSave = 0;
+
+  async function worker() {
+    while (cursor < ids.length) {
+      const id = ids[cursor++];
+      const res = await fetchOne(kind, id);
+      if (res.data) results.push(res.data);
+      else if (res.notFound) notFound.push(id);
+      else failed.push(id); // erreur réseau -> on retentera la prochaine fois
+
+      done++;
+      sinceLastSave++;
+      onProgress(done);
+
+      if (sinceLastSave >= 30) {
+        sinceLastSave = 0;
+        await onBatchDone(results.splice(0), notFound.splice(0));
+      }
+    }
+  }
+
+  const workers = Array.from({ length: CONCURRENCY }, worker);
+  await Promise.all(workers);
+  await onBatchDone(results, notFound);
+  return { failedIds: failed };
+}
+
+function getCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.monsters || !parsed.items) return null;
+    if (!parsed.scannedMonsterIds) parsed.scannedMonsterIds = parsed.monsters.map(m => m.monster_id);
+    if (!parsed.scannedItemIds) parsed.scannedItemIds = parsed.items.map(i => i.item_id);
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveCache(cache) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {
+    console.warn('localStorage plein, cache partiel non sauvegardé', e);
   }
 }
 
@@ -599,37 +644,50 @@ function loadFromCache() {
   return true;
 }
 
+function emptyCache() {
+  return { version: 4, monsters: [], items: [], scannedMonsterIds: [], scannedItemIds: [] };
+}
+
+// Indexe par petits lots (MAX_PER_SESSION requêtes max par appui sur "Sync").
+// Traite d'abord TOUS les monstres, puis les items, pour avoir rapidement
+// une base monstres utilisable même si les items prennent plusieurs sync.
 async function runIndexing() {
   showInitView(true);
 
-  let cache = getCache() || {
-    version: 3, monsters: [], items: [],
-    scannedMonsterIds: [], scannedItemIds: [],
-  };
+  let cache = getCache() || emptyCache();
 
   const allMonsterIds = buildIdList(MONSTER_RANGES);
   const allItemIds = buildIdList(ITEM_RANGES);
   const scannedM = new Set(cache.scannedMonsterIds);
   const scannedI = new Set(cache.scannedItemIds);
-  const monsterIds = allMonsterIds.filter(id => !scannedM.has(id));
-  const itemIds = allItemIds.filter(id => !scannedI.has(id));
+  const remainingMonsterIds = allMonsterIds.filter(id => !scannedM.has(id));
+  const remainingItemIds = allItemIds.filter(id => !scannedI.has(id));
 
-  const total = monsterIds.length + itemIds.length;
-  if (total === 0) {
+  // Phase courante : monstres en priorité, items une fois les monstres finis
+  let phase, idsToScan;
+  if (remainingMonsterIds.length > 0) {
+    phase = 'monsters';
+    idsToScan = remainingMonsterIds.slice(0, MAX_PER_SESSION);
+  } else if (remainingItemIds.length > 0) {
+    phase = 'items';
+    idsToScan = remainingItemIds.slice(0, MAX_PER_SESSION);
+  } else {
+    // Tout est déjà indexé
     showInitView(false);
     DB = { monsters: cache.monsters, items: cache.items };
     switchTab(state.tab, true);
     return;
   }
 
-  document.getElementById('init-text').textContent =
-    `Indexation depuis RagnaAPI : ${cache.monsters.length + cache.items.length} déjà en cache, ` +
-    `${total} restants. Cela peut prendre du temps — ta progression est sauvegardée en continu, ` +
-    `tu peux fermer et relancer "Sync" plus tard pour continuer.`;
-  updateProgress(cache.monsters.length + cache.items.length, allMonsterIds.length + allItemIds.length);
+  const phaseLabel = phase === 'monsters' ? 'monstres' : 'items';
+  const totalForPhase = phase === 'monsters' ? allMonsterIds.length : allItemIds.length;
+  const alreadyForPhase = phase === 'monsters' ? cache.monsters.length : cache.items.length;
 
-  let done = 0;
-  const baseDone = (allMonsterIds.length - monsterIds.length) + (allItemIds.length - itemIds.length);
+  document.getElementById('init-text').textContent =
+    `Indexation des ${phaseLabel} : ${alreadyForPhase} / ${totalForPhase} déjà en cache. ` +
+    `Traitement de ${idsToScan.length} de plus dans cette session. ` +
+    `Réappuie sur "Sync" pour continuer après.`;
+  updateProgress(alreadyForPhase, totalForPhase);
 
   async function saveBatch(kind, newData, newNotFound) {
     if (kind === 'monsters') {
@@ -643,25 +701,16 @@ async function runIndexing() {
     DB = { monsters: cache.monsters, items: cache.items };
   }
 
-  await scanWithConcurrency('monsters', monsterIds, (d) => {
-    updateProgress(baseDone + d, allMonsterIds.length + allItemIds.length);
-  }, (data, nf) => saveBatch('monsters', data, nf));
-
-  done = monsterIds.length;
-  await scanWithConcurrency('items', itemIds, (d) => {
-    updateProgress(baseDone + done + d, allMonsterIds.length + allItemIds.length);
-  }, (data, nf) => saveBatch('items', data, nf));
+  await scanWithConcurrency(phase, idsToScan, (d) => {
+    updateProgress(alreadyForPhase + d, totalForPhase);
+  }, (data, nf) => saveBatch(phase, data, nf));
 
   showInitView(false);
 
   if (cache.monsters.length === 0 && cache.items.length === 0) {
     showError(
-      'Aucune donnée reçue de RagnaAPI, même avec les proxys de secours. ' +
-      'Cela vient probablement du fait que cette page est ouverte en local (file://), ' +
-      'ce qui bloque les requêtes réseau dans certains navigateurs. ' +
-      'Solution recommandée : héberge ce fichier en ligne (ex: GitHub Pages, gratuit, ' +
-      'configurable depuis ton téléphone) puis ouvre l\'URL https://... — ' +
-      'demande-moi le guide étape par étape si besoin.'
+      'Aucune donnée reçue de RagnaAPI. Vérifie ta connexion internet, ' +
+      'puis appuie sur "Sync" pour réessayer.'
     );
     return;
   }
@@ -695,6 +744,8 @@ function switchTab(tab, force) {
   state.filter = null;
   state.query = '';
   state.inDetail = false;
+  state.navStack = [];
+  state.currentView = null;
   document.getElementById('search-input').value = '';
   document.getElementById('clear-btn').style.display = 'none';
   showList();
@@ -776,9 +827,22 @@ function applyFilter() {
   renderList();
 }
 
+const RENDER_LIMIT = 80;
+
 function renderList() {
   const container = document.getElementById('list-container');
   container.innerHTML = '';
+
+  // Pas de recherche ni filtre actif : éviter de rendre des centaines de
+  // cartes d'un coup (lent sur mobile) — on invite à chercher/filtrer.
+  if (!state.query && !state.filter) {
+    const total = state.filtered.length;
+    container.innerHTML = `<div class="empty-msg">
+      🔍 ${total} ${state.tab === 'monsters' ? 'monstres' : 'items'} indexés.<br>
+      Tape un nom (ou un ID) dans la recherche, ou choisis un filtre ci-dessus pour afficher la liste.
+    </div>`;
+    return;
+  }
 
   if (state.filtered.length === 0) {
     container.innerHTML = `<div class="empty-msg">${
@@ -787,13 +851,21 @@ function renderList() {
     return;
   }
 
+  const toRender = state.filtered.slice(0, RENDER_LIMIT);
   const frag = document.createDocumentFragment();
-  state.filtered.forEach(item => {
+  toRender.forEach(item => {
     frag.appendChild(state.tab === 'monsters'
       ? buildMonsterCard(item)
       : buildItemCard(item));
   });
   container.appendChild(frag);
+
+  if (state.filtered.length > RENDER_LIMIT) {
+    const note = document.createElement('div');
+    note.className = 'empty-msg';
+    note.textContent = `+ ${state.filtered.length - RENDER_LIMIT} autres résultats — affine ta recherche pour les voir.`;
+    container.appendChild(note);
+  }
 }
 
 function buildMonsterCard(m) {
@@ -855,6 +927,8 @@ function buildItemCard(item) {
 function openMonsterDetail(id) {
   const m = DB.monsters.find(x => x.monster_id === id);
   if (!m) return;
+  if (state.currentView) state.navStack.push(state.currentView);
+  state.currentView = { type: 'monster', id };
   showDetail();
   renderMonsterDetail(m);
 }
@@ -866,19 +940,37 @@ function statRow(label, val, color, last=false) {
   </div>`;
 }
 
+// Cherche un item correspondant à un nom de drop (même format snake_case que l'API)
+function findItemByName(name) {
+  if (!name) return null;
+  return DB.items.find(i => i.name === name) || null;
+}
+
 function renderMonsterDetail(m) {
   const name = displayName(m.monster_info);
   const el = m.type || 'neutral';
   const elColor_ = elColor(el);
   const s = m.main_stats || {};
-  const a = m.main_atb || {};
   const ed = m.elementalDamage || {};
   const drops = [...(m.drops || [])].sort((a,b) => b.rate - a.rate);
   const maps = m.maps || [];
   const modes = m.skills?.mode || [];
+  const mvp = isMvp(m);
 
   const elEntries = Object.entries(ed).map(([k,v]) => ({k, v: Number(v)}))
     .sort((a,b) => b.v - a.v);
+
+  // Résumé respawn / quantité (sous le sprite)
+  let respawnHtml = '';
+  if (maps.length > 0) {
+    const totalAmount = maps.reduce((sum, mp) => sum + (Number(mp.amount) || 0), 0);
+    const freqs = [...new Set(maps.map(mp => mp.frequency).filter(Boolean))];
+    respawnHtml = `<div class="respawn-summary">
+      <span>👥 ${totalAmount} sur la${maps.length>1?'s':''} carte${maps.length>1?'s':''}</span>
+      <span>⏱ Respawn ${freqs[0] || '?'}${freqs.length>1?` (+${freqs.length-1})`:''}</span>
+      ${maps.length>1?`<span>🗺 ${maps.length} zones</span>`:''}
+    </div>`;
+  }
 
   const dv = document.getElementById('detail-view');
   dv.innerHTML = `
@@ -890,6 +982,7 @@ function renderMonsterDetail(m) {
       <div class="detail-name">${name}</div>
       <div class="detail-id">ID : ${m.monster_id}</div>
     </div>
+    ${respawnHtml}
 
     <div class="detail-badges">
       <span class="chip" style="color:${elColor_};border-color:${elColor_}55;background:${elColor_}18">
@@ -897,10 +990,11 @@ function renderMonsterDetail(m) {
       </span>
       ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}55;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
       ${m.size ? `<span class="chip" style="color:var(--text-2);border-color:var(--border)">${{small:'Petit',medium:'Moyen',large:'Grand'}[m.size]||m.size}</span>` : ''}
+      ${mvp ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A55;background:#FFF08A18">★ MVP</span>` : ''}
     </div>
 
     <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Stats</div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Stats</div></div></div>
       <div class="stats-card">
         ${statRow('HP', s.hp, '#E84040')}
         ${statRow('Niveau', s.level, '#F5A623')}
@@ -917,20 +1011,9 @@ function renderMonsterDetail(m) {
       </div>
     </div>
 
-    <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Attributs</div></div>
-      <div class="attr-grid">
-        ${['STR','AGI','VIT','INT','DEX','LUK'].map(k => `
-          <div class="attr-box">
-            <div class="attr-key">${k}</div>
-            <div class="attr-val">${a[k.toLowerCase()] ?? 0}</div>
-          </div>`).join('')}
-      </div>
-    </div>
-
     ${elEntries.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Résistances élémentaires</div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Résistances élémentaires</div></div></div>
       <div class="stats-card" style="padding:12px">
       ${elEntries.map(({k,v}) => {
         const c = elColor(k);
@@ -947,30 +1030,43 @@ function renderMonsterDetail(m) {
 
     ${drops.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Drops</div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Drops</div></div>
+      ${ADMIN.enabled && (ADMIN.globalRateMult !== 1 || ADMIN.mvpRateMult !== 1) ? `<span style="font-size:9px;color:var(--gold)">⚙ ×${mvp?ADMIN.mvpRateMult:ADMIN.globalRateMult}</span>` : ''}
+      </div>
       ${drops.map(d => {
-        const pct = d.rate;
+        const orig = d.rate;
+        const pct = adjustedRate(m, orig);
+        const adjusted = Math.abs(pct - orig) > 0.0001;
         const barColor = pct>=50?'#E84040':pct>=1?'#F5A623':'#4A90D9';
         const rateColor= pct>=50?'#E84040':pct>=1?'#F5A623':'#8888AA';
-        const rateLabel= pct>=1?pct.toFixed(2)+'%':pct.toFixed(3)+'%';
-        return `<div class="drop-row">
+        const fmt = (v) => v>=1 ? v.toFixed(2)+'%' : v.toFixed(3)+'%';
+        const matchedItem = findItemByName(d.name);
+        const clickable = matchedItem ? 'clickable' : '';
+        const onclick = matchedItem ? `onclick="openItemDetail(${matchedItem.item_id})"` : '';
+        return `<div class="drop-row ${clickable}" ${onclick}>
           <div class="drop-icon-box">
             ${d.img?`<img src="${d.img}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">`:'📦'}
           </div>
           <div class="drop-info">
-            <div class="drop-name">${displayName(d.name)}</div>
+            <div class="drop-name">${displayName(d.name)}${matchedItem?' <span style="color:var(--text-muted)">›</span>':''}</div>
             <div class="drop-bar-wrap">
               <div class="drop-bar-bg"><div class="drop-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
             </div>
           </div>
-          <div class="drop-rate" style="color:${rateColor}">${rateLabel}</div>
+          <div class="drop-rate" style="color:${rateColor};text-align:right">
+            ${adjusted?`<div class="drop-rate-orig">${fmt(orig)}</div>`:''}
+            <div>${fmt(pct)}</div>
+          </div>
         </div>`;
       }).join('')}
     </div>` : ''}
 
     ${maps.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
+      <div class="section-header">
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
+        <button class="section-action" onclick='openWorldMap(${JSON.stringify(m.monster_info)}, ${JSON.stringify(maps)})'>🗺 Carte du monde</button>
+      </div>
       ${maps.map(mp => `<div class="map-row">
         <div class="map-thumb">
           ${mp.img?`<img src="${mp.img}" loading="lazy" onerror="this.parentElement.textContent='🗺'">`:'🗺'}
@@ -985,9 +1081,81 @@ function renderMonsterDetail(m) {
 
     ${modes.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Comportement</div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Comportement</div></div></div>
       <div>${modes.map(m=>`<span class="mode-chip">${modesFr(m)}</span>`).join('')}</div>
     </div>` : ''}
+  `;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// WORLD MAP (vue simplifiée par région)
+// ════════════════════════════════════════════════════════════════════════════
+// Catégorise un nom de map RO dans une grande région du monde (géographie
+// factuelle du jeu : Rune-Midgarts au sud, Schwartzvald au nord-est,
+// Arunafeltz au nord-ouest, + zones spéciales/donjons).
+function mapRegion(name) {
+  const n = (name || '').toLowerCase();
+  const regions = [
+    { key: 'arunafeltz', label: 'Arunafeltz States (nord-ouest)',
+      desc: 'Capitale : Rachel. Régions enneigées du nord-ouest.',
+      prefixes: ['ra_', 'man_', 'lhz_', 'dic_', 'mid_camp', 'abbey'] },
+    { key: 'schwartzvald', label: 'République de Schwartzvald (nord-est)',
+      desc: 'Capitale : Juno (Yuno). Tours et académies magiques.',
+      prefixes: ['yuno', 'kh_', 'thana', 'nyd_', 'gefenia'] },
+    { key: 'donjons', label: 'Donjons de fin de jeu',
+      desc: 'Juperos, Thanatos Tower, Nidhoggur, Niflheim, Glast Heim profond...',
+      prefixes: ['jupe_', 'niflheim', 'gl_', 'abyss', 'beach_dun'] },
+    { key: 'rune-midgarts', label: 'Royaume de Rune-Midgarts (sud)',
+      desc: 'Capitale : Prontera. La plus grande région, climats variés.',
+      prefixes: ['prt_', 'pay_', 'mjo_', 'gef_', 'alb_', 'mor_', 'comodo',
+                  'umbala', 'ayo', 'amatsu', 'lou_', 'xmas', 'que_', 'iz_',
+                  'in_', 'sec_', 'tur_', 'mosk', 'spl_'] },
+  ];
+  for (const r of regions) {
+    if (r.prefixes.some(p => n.startsWith(p))) return r;
+  }
+  return { key: 'autre', label: 'Autres zones', desc: 'Îles, zones spéciales ou instances.', prefixes: [] };
+}
+
+function openWorldMap(monsterName, mapEntries) {
+  if (state.currentView) state.navStack.push(state.currentView);
+  state.currentView = { type: 'worldmap' };
+  showDetail();
+  renderWorldMap(monsterName, mapEntries);
+}
+
+function renderWorldMap(monsterName, mapEntries) {
+  const dv = document.getElementById('detail-view');
+
+  // Regroupe les zones de spawn par région
+  const byRegion = {};
+  for (const mp of mapEntries) {
+    const r = mapRegion(mp.name);
+    if (!byRegion[r.key]) byRegion[r.key] = { ...r, maps: [] };
+    byRegion[r.key].maps.push(mp);
+  }
+  const regionKeys = Object.keys(byRegion);
+
+  dv.innerHTML = `
+    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <div class="detail-hero">
+      <div style="font-size:40px">🗺</div>
+      <div class="detail-name">CARTE DU MONDE</div>
+      <div class="detail-id">Zones de spawn — ${displayName(monsterName)}</div>
+    </div>
+    <div class="detail-section">
+      ${regionKeys.map(key => {
+        const r = byRegion[key];
+        return `<div class="region-box">
+          <div class="region-title">📍 ${r.label}</div>
+          <div class="region-desc">${r.desc}</div>
+          <div>${r.maps.map(mp => `<span class="map-chip highlight">${displayName(mp.name)}${mp.number?' '+mp.number:''}</span>`).join('')}</div>
+        </div>`;
+      }).join('')}
+      <div class="empty-msg" style="padding:16px 0 0">
+        ℹ️ Vue simplifiée par région (pas de carte image — données factuelles uniquement).
+      </div>
+    </div>
   `;
 }
 
@@ -997,6 +1165,8 @@ function renderMonsterDetail(m) {
 function openItemDetail(id) {
   const item = DB.items.find(x => x.item_id === id);
   if (!item) return;
+  if (state.currentView) state.navStack.push(state.currentView);
+  state.currentView = { type: 'item', id };
   showDetail();
   renderItemDetail(item);
 }
@@ -1057,6 +1227,22 @@ function showDetail() {
   state.inDetail = true;
 }
 function goBack() {
+  if (state.navStack.length > 0) {
+    const prev = state.navStack.pop();
+    state.currentView = prev;
+    if (prev.type === 'monster') {
+      const m = DB.monsters.find(x => x.monster_id === prev.id);
+      if (m) renderMonsterDetail(m); else goBack();
+    } else if (prev.type === 'item') {
+      const it = DB.items.find(x => x.item_id === prev.id);
+      if (it) renderItemDetail(it); else goBack();
+    } else {
+      showList();
+    }
+    document.getElementById('content').scrollTop = 0;
+    return;
+  }
+  state.currentView = null;
   showList();
   document.getElementById('content').scrollTop = 0;
 }
@@ -1067,6 +1253,68 @@ function showError(msg) {
 }
 function hideError() {
   document.getElementById('error-view').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ADMIN PANEL — multiplicateurs de taux de drop
+// ════════════════════════════════════════════════════════════════════════════
+function openAdminPanel() {
+  if (state.currentView) state.navStack.push(state.currentView);
+  state.currentView = { type: 'admin' };
+  showDetail();
+  renderAdminPanel();
+}
+
+function renderAdminPanel() {
+  const dv = document.getElementById('detail-view');
+  dv.innerHTML = `
+    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <div class="detail-hero">
+      <div style="font-size:40px">⚙️</div>
+      <div class="detail-name">MODE ADMIN</div>
+      <div class="detail-id">Ajuste les taux de drop affichés</div>
+    </div>
+    <div class="detail-section">
+      <div class="admin-toggle">
+        <div>
+          <div style="font-size:13px;color:var(--text-1);font-weight:600">Activer le mode admin</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Applique les multiplicateurs ci-dessous aux taux affichés</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="admin-enabled" ${ADMIN.enabled?'checked':''} onchange="updateAdminEnabled(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="admin-row">
+        <label class="admin-label">Multiplicateur global (monstres normaux)</label>
+        <input class="admin-input" type="number" step="0.1" min="0" id="admin-global"
+          value="${ADMIN.globalRateMult}" onchange="updateAdminValue('globalRateMult', this.value)">
+      </div>
+
+      <div class="admin-row">
+        <label class="admin-label">Multiplicateur spécifique aux MVP ★</label>
+        <input class="admin-input" type="number" step="0.1" min="0" id="admin-mvp"
+          value="${ADMIN.mvpRateMult}" onchange="updateAdminValue('mvpRateMult', this.value)">
+      </div>
+
+      <div class="empty-msg" style="padding:8px 0">
+        ℹ️ Ex: 2 = double tous les taux affichés (plafonné à 100%). 1 = taux d'origine de RagnaAPI.
+        Les MVP sont détectés automatiquement via leur mode "mvp".
+      </div>
+    </div>
+  `;
+}
+
+function updateAdminEnabled(checked) {
+  ADMIN.enabled = checked;
+  saveAdmin();
+  document.getElementById('admin-btn').classList.toggle('on', checked);
+}
+function updateAdminValue(key, value) {
+  const v = parseFloat(value);
+  ADMIN[key] = isNaN(v) || v < 0 ? 1 : v;
+  saveAdmin();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1086,16 +1334,12 @@ function clearSearch() {
   applyFilter();
 }
 
-// Bouton retour Android
-window.addEventListener('popstate', () => { if (state.inDetail) goBack(); });
-document.addEventListener('click', e => {
-  if (state.inDetail && e.target.closest('#back-btn')) history.back();
-});
-
 // ════════════════════════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════════════════════════
 (async function init() {
+  loadAdmin();
+  document.getElementById('admin-btn').classList.toggle('on', ADMIN.enabled);
   buildFilters();
   if (loadFromCache() && (DB.monsters.length > 0 || DB.items.length > 0)) {
     // On a déjà des données en cache : on les affiche immédiatement.
