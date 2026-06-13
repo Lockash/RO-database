@@ -1,4 +1,126 @@
-<!DOCTYPE html>
+: var(--text-muted); flex-shrink: 0; }
+
+  /* ── Chips ── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+    border: 1px solid; white-space: nowrap;
+  }
+
+  /* ── Detail ── */
+  #detail-view { padding-bottom: 24px; }
+  #back-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: none; color: var(--gold);
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    padding: 14px 16px; cursor: pointer; width: 100%;
+  }
+  .detail-hero {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px; position: relative;
+  }
+  .detail-hero-bg {
+    position: absolute; inset: 0; opacity: .06;
+    background: radial-gradient(circle at center, var(--el-color, var(--gold)) 0%, transparent 70%);
+  }
+  .detail-sprite {
+    image-rendering: pixelated; max-height: 110px; max-width: 150px;
+    position: relative; z-index: 1;
+  }
+  .detail-name {
+    font-family: 'Press Start 2P', monospace; font-size: 10px;
+    color: var(--gold); margin-top: 10px; text-align: center;
+    line-height: 1.6; position: relative; z-index: 1;
+  }
+  .detail-id { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
+  .detail-section { padding: 0 16px 20px; }
+  .section-header {
+    display: flex; align-items: center; gap: 7px;
+    margin-bottom: 10px;
+  }
+  .section-bar { width: 3px; height: 14px; background: var(--gold); border-radius: 2px; }
+  .section-title {
+    font-family: 'Press Start 2P', monospace; font-size: 8px;
+    color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;
+  }
+
+  /* Stats table */
+  .stats-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 14px; border-bottom: 1px solid var(--divider);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 13px; color: var(--text-2); }
+  .stat-value { font-size: 13px; font-weight: 600; color: var(--text-1); text-align: right; }
+
+  /* Attr grid */
+  .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .attr-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .attr-key { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold); }
+  .attr-val { font-size: 18px; font-weight: 700; color: var(--text-1); }
+
+  /* Elemental bars */
+  .el-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .el-label { width: 72px; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .el-bar-bg { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+  .el-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .el-pct { width: 38px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text-2); flex-shrink: 0; }
+
+  /* Drops */
+  .drop-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 10px; margin-bottom: 7px;
+  }
+  .drop-icon-box {
+    width: 40px; height: 40px; flex-shrink: 0;
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; font-size: 16px;
+  }
+  .drop-icon-box img { image-rendering: pixelated; max-width: 32px; max-height: 32px; }
+  .drop-info { flex: 1; min-width: 0; }
+  .drop-name { font-size: 12px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drop-bar-wrap { margin-top: 4px; }
+  .drop-bar-bg { height: 4px; background: var(--bg-elevated); border-radius: 2px; overflow: hidden; }
+  .drop-bar-fill { height: 100%; border-radius: 2px; }
+  .drop-rate { font-size: 11px; font-weight: 600; flex-shrink: 0; }
+
+  /* Spawn maps */
+  .map-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 10px; margin-bottom: 7px;
+  }
+  .map-thumb {
+    width: 60px; height: 60px; flex-shrink: 0;
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .map-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .map-info { flex: 1; }
+  .map-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .map-meta { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+  .map-type-badge {
+    font-size: 10px; color: var(--text-muted); padding: 3px 7px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 4px; flex-shrink: 0;
+  }
+
+  /* Mode chips */
+  .mode-chip {
+    display: inline-block; padding: 5px 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 4px; font-size: 11px; color: var(--text-<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -164,17 +286,78 @@
     line-height: 1.6; position: relative; z-index: 1;
   }
   .detail-id { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .respawn-summary {
+    display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+    font-size: 12px; color: var(--rune-blue); padding: 0 16px 12px; text-align: center;
+  }
+  .respawn-summary span { display: inline-flex; align-items: center; gap: 4px; }
   .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
   .detail-section { padding: 0 16px 20px; }
   .section-header {
-    display: flex; align-items: center; gap: 7px;
+    display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 10px;
   }
+  .section-header-left { display: flex; align-items: center; gap: 7px; }
   .section-bar { width: 3px; height: 14px; background: var(--gold); border-radius: 2px; }
   .section-title {
     font-family: 'Press Start 2P', monospace; font-size: 8px;
     color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;
   }
+  .section-action {
+    font-size: 10px; color: var(--rune-blue); background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; cursor: pointer;
+  }
+
+  /* Admin */
+  #admin-btn {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-2); padding: 5px 7px;
+    font-size: 12px; cursor: pointer; margin-right: 6px;
+  }
+  #admin-btn.on { color: var(--gold); border-color: var(--gold-dim); }
+  .admin-row { margin-bottom: 14px; }
+  .admin-label { font-size: 12px; color: var(--text-2); margin-bottom: 6px; display: block; }
+  .admin-input {
+    width: 100%; background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-1); font-size: 14px; padding: 9px 12px;
+    font-family: 'Roboto', sans-serif;
+  }
+  .admin-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; margin-bottom: 14px;
+  }
+  .switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+    position: absolute; inset: 0; background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: 22px; cursor: pointer; transition: .2s;
+  }
+  .switch-slider::before {
+    content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px;
+    background: var(--text-muted); border-radius: 50%; transition: .2s;
+  }
+  .switch input:checked + .switch-slider { background: #F5A62333; border-color: var(--gold-dim); }
+  .switch input:checked + .switch-slider::before { transform: translateX(18px); background: var(--gold); }
+
+  /* Drops clickable */
+  .drop-row.clickable { cursor: pointer; }
+  .drop-row.clickable:active { border-color: var(--gold); }
+  .drop-rate-orig { font-size: 9px; color: var(--text-muted); text-decoration: line-through; margin-right: 4px; }
+
+  /* World map */
+  .region-box {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-bottom: 8px;
+  }
+  .region-title { font-size: 12px; font-weight: 600; color: var(--text-1); margin-bottom: 8px; }
+  .region-desc { font-size: 11px; color: var(--text-2); margin-bottom: 8px; line-height: 1.5; }
+  .map-chip {
+    display: inline-block; padding: 5px 10px; border-radius: 4px; font-size: 11px;
+    margin: 0 6px 6px 0; border: 1px solid;
+  }
+  .map-chip.highlight { color: var(--gold); border-color: var(--gold-dim); background: #F5A62318; font-weight: 600; }
+  .map-chip.dim { color: var(--text-muted); border-color: var(--border); }
 
   /* Stats table */
   .stats-card {
@@ -298,12 +481,15 @@
   <div id="topbar">
     <div id="topbar-row">
       <div id="topbar-title">⚔ RO PRE-RENEWAL DB</div>
-      <button id="refresh-btn" onclick="forceRescan()" title="Re-scanner la base">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-        </svg>
-        Sync
-      </button>
+      <div style="display:flex">
+        <button id="admin-btn" onclick="openAdminPanel()" title="Mode admin">⚙️</button>
+        <button id="refresh-btn" onclick="forceRescan()" title="Re-scanner la base">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+          Sync
+        </button>
+      </div>
     </div>
     <div id="search-bar">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -367,8 +553,19 @@
 // CONFIG
 // ════════════════════════════════════════════════════════════════════════════
 const API = 'https://ragnapi.com/api/v1/old-times';
-const CACHE_KEY = 'ro_db_cache_v3';
-const CONCURRENCY = 8;
+const CACHE_KEY = 'ro_db_cache_v4';
+const ADMIN_KEY = 'ro_admin_settings_v1';
+
+// Hébergé en https (GitHub Pages) : pas besoin de proxy dans la grande majorité
+// des cas, donc on peut paralléliser plus fort. Un timeout par requête évite
+// qu'une requête lente ne bloque tout.
+const CONCURRENCY = 24;
+const FETCH_TIMEOUT_MS = 6000;
+
+// On limite le nombre de requêtes par session de sync pour que chaque appui
+// sur "Sync" reste rapide (quelques dizaines de secondes max). On reprend
+// ensuite exactement où on s'est arrêté.
+const MAX_PER_SESSION = 400;
 
 // Plages d'IDs scannées. RagnaAPI n'a pas d'endpoint de liste,
 // donc on construit notre propre index en testant ces IDs une seule fois,
@@ -379,173 +576,19 @@ const MONSTER_RANGES = [[1001, 1999]];
 const ITEM_RANGES = [
   [501, 620],   // potions, soins, usables
   [901, 1050],  // matériaux de drop (jellopy, fluff, cartes brisées...)
-  [1101, 1500], // armes (dagues, épées, lances, arcs, deux-mains...)
-  [2301, 2520], // headgears + armures/garments/chaussures/accessoires
+  [1101, 1200], // armes courantes
+  [2301, 2400], // headgears / armures courantes
   [4001, 4400], // cartes (incl. Thanatos Tower / Nidhoggur)
-  [7001, 7200], // matériaux divers / quêtes
+  [7001, 7100], // matériaux divers / quêtes
 ];
 
 // ── Stratégie réseau ──────────────────────────────────────────────────────────
-// Certains navigateurs bloquent les requêtes fetch() vers des domaines externes
-// quand la page est ouverte en file://. On détecte ça au démarrage et on bascule
-// automatiquement sur un proxy CORS public si nécessaire.
+// En https (GitHub Pages), le direct devrait suffire. On garde des proxys de
+// secours seulement en dernier recours (et on ne les martèle pas).
 const FETCH_MODES = [
   { name: 'direct',     build: (url) => url },
   { name: 'codetabs',   build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` },
-  { name: 'allorigins', build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
-  { name: 'corsproxy',  build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}` },
-];
-// Index du mode qui a fonctionné en dernier (on l'essaie en premier la prochaine fois)
-let preferredModeIndex = 0;
-
-// ════════════════════════════════════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════════════════════════════════════
-let DB = { monsters: [], items: [] };
-let state = {
-  tab: 'monsters',
-  filtered: [],
-  query: '',
-  filter: null,
-  inDetail: false,
-};
-
-// ════════════════════════════════════════════════════════════════════════════
-// HELPERS - traduction / couleurs
-// ════════════════════════════════════════════════════════════════════════════
-const EL_FR   = { fire:'Feu', water:'Eau', wind:'Vent', earth:'Terre', holy:'Sacré',
-                   shadow:'Ombre', poison:'Poison', undead:'Mort-vivant', ghost:'Fantôme', neutral:'Neutre' };
-const EL_COLOR= { fire:'#E84040', water:'#4096E8', wind:'#48C774', earth:'#A0804A',
-                   holy:'#FFF08A', shadow:'#9B59B6', poison:'#2ECC71', undead:'#95A5A6',
-                   ghost:'#7F8C8D', neutral:'#BDC3C7' };
-const EL_ICON = { fire:'🔥', water:'💧', wind:'🌀', earth:'🌿', holy:'✨',
-                   shadow:'🌑', poison:'☠', undead:'💀', ghost:'👻', neutral:'⬜' };
-const RACE_FR  = { angel:'Ange', demihuman:'Demi-humain', 'demi-human':'Demi-humain',
-                    dragon:'Dragon', formless:'Sans forme', insect:'Insecte',
-                    plant:'Plante', undead:'Mort-vivant', brute:'Brute', fish:'Poisson' };
-const RACE_COLOR={ angel:'#FFF08A', demihuman:'#E8A040', 'demi-human':'#E8A040',
-                    dragon:'#E84040', formless:'#BDC3C7', insect:'#48C774',
-                    plant:'#27AE60', undead:'#95A5A6', brute:'#A0804A', fish:'#4096E8' };
-const TYPE_COLOR={ weapon:'#E84040', armor:'#4A90D9', card:'#F5A623',
-                    usable:'#48C774', etc:'#8888AA', ammo:'#BDC3C7' };
-const TYPE_FR  = { weapon:'Arme', armor:'Armure', card:'Carte',
-                    usable:'Consommable', etc:'Divers', ammo:'Munition' };
-
-function elColor(e){ return EL_COLOR[e?.toLowerCase()] || '#BDC3C7'; }
-function elFr(e)   { return EL_FR[e?.toLowerCase()] || e || 'Neutre'; }
-function raceFr(r) { return RACE_FR[r?.toLowerCase()] || r; }
-function raceColor(r){ return RACE_COLOR[r?.toLowerCase()] || '#8888AA'; }
-function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
-function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
-function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
-function modesFr(m) {
-  const map = { aggressive:'Agressif', changes_target_if_attacked:'Change de cible si attaqué',
-    assists:'Appelle des alliés', cast_sensor_idle:'Détecte les sorts',
-    detector:'Détecteur', boss:'Boss', mvp:'MVP', looter:'Looteur', plant:'Immobile' };
-  return map[m] || displayName(m);
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// INDEXING - scan RagnaAPI une fois, cache localStorage
-// ════════════════════════════════════════════════════════════════════════════
-function buildIdList(ranges) {
-  const ids = [];
-  for (const [start, end] of ranges) {
-    for (let i = start; i <= end; i++) ids.push(i);
-  }
-  return ids;
-}
-
-// Essaie chaque mode dans l'ordre (en commençant par le dernier qui a marché),
-// avec un petit délai entre tentatives pour ne pas se faire bannir des proxys.
-async function fetchOne(kind, id, retries = 1) {
-  const url = `${API}/${kind}/${id}`;
-  const order = [...FETCH_MODES.keys()].sort((a, b) =>
-    a === preferredModeIndex ? -1 : b === preferredModeIndex ? 1 : 0);
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    for (const idx of order) {
-      const mode = FETCH_MODES[idx];
-      try {
-        const res = await fetch(mode.build(url), { cache: 'no-store' });
-        if (!res.ok) {
-          if (res.status === 404) return { notFound: true };
-          continue; // 4xx/5xx du proxy -> essaie le mode suivant
-        }
-        const data = await res.json();
-        if (kind === 'monsters' && !data.monster_id) continue;
-        if (kind === 'items' && !data.item_id && !data.name) continue;
-        preferredModeIndex = idx; // ce mode fonctionne, on le privilégie
-        return { data };
-      } catch (e) {
-        continue; // essaie le mode suivant
-      }
-    }
-    if (attempt < retries) await sleep(400);
-  }
-  return { error: true };
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-async function scanWithConcurrency(kind, ids, onProgress, onBatchDone) {
-  const results = [];
-  const notFound = [];
-  const failed = [];
-  let cursor = 0;
-  let done = 0;
-  let sinceLastSave = 0;
-
-  async function worker() {
-    while (cursor < ids.length) {
-      const id = ids[cursor++];
-      const res = await fetchOne(kind, id);
-      if (res.data) results.push(res.data);
-      else if (res.notFound) notFound.push(id);
-      else failed.push(id); // erreur réseau -> on retentera la prochaine fois
-
-      done++;
-      sinceLastSave++;
-      onProgress(done);
-
-      if (sinceLastSave >= 30) {
-        sinceLastSave = 0;
-        await onBatchDone(results.splice(0), notFound.splice(0));
-      }
-    }
-  }
-
-  const workers = Array.from({ length: CONCURRENCY }, worker);
-  await Promise.all(workers);
-  await onBatchDone(results, notFound);
-  return { failedIds: failed };
-}
-
-// ── Cache structure ──
-// {
-//   version: 3,
-//   monsters: [...],          items: [...]
-//   scannedMonsterIds: [...], scannedItemIds: [...]   (trouvés OU confirmés absents)
-// }
-function getCache() {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed.monsters || !parsed.items) return null;
-    if (!parsed.scannedMonsterIds) parsed.scannedMonsterIds = parsed.monsters.map(m => m.monster_id);
-    if (!parsed.scannedItemIds) parsed.scannedItemIds = parsed.items.map(i => i.item_id);
-    return parsed;
-  } catch (e) {
-    return null;
-  }
-}
-
-function saveCache(cache) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch (e) {
-    console.warn('localStorage plein, cache partiel non sauvegardé', e);
+  { name: 'allorigins', build: (url) => `https://apipartiel non sauvegardé', e);
   }
 }
 
