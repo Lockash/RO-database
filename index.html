@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0D0D1A">
+<title>RO Pre-Renewal DB</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep:    #0D0D1A;
+    --bg-card:    #141428;
+    --bg-elevated:#1C1C38;
+    --gold:       #F5A623;
+    --gold-dim:   #8A5C12;
+    --rune-blue:  #4A90D9;
+    --border:     #2A2A4A;
+    --divider:    #1E1E3A;
+    --text-1:     #E8E8F0;
+    --text-2:     #8888AA;
+    --text-muted: #444466;
+    --fire:   #E84040; --water: #4096E8; --wind:  #48C774;
+    --earth:  #A0804A; --holy:  #FFF08A; --shadow:#9B59B6;
+    --poison: #2ECC71; --undead:#95A5A6; --ghost: #7F8C8D;
+    --neutral:#BDC3C7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg-deep); color: var(--text-1); font-family: 'Roboto', sans-serif; overflow: hidden; }
+
+  /* ── Layout ── */
+  #app { display: flex; flex-direction: column; height: 100vh; }
+  #topbar {
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px 0;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  #topbar-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  #topbar-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  #refresh-btn {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-2); padding: 5px 8px;
+    font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px;
+  }
+  #search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 12px;
+    margin-bottom: 10px;
+  }
+  #search-bar svg { color: var(--text-muted); flex-shrink: 0; }
+  #search-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text-1); font-size: 14px; padding: 10px 8px;
+    font-family: 'Roboto', sans-serif;
+  }
+  #search-input::placeholder { color: var(--text-muted); }
+  #clear-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: none; }
+
+  /* Filtres */
+  #filters {
+    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px;
+    scrollbar-width: none;
+  }
+  #filters::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 11px;
+    border: 1px solid var(--border); background: var(--bg-elevated);
+    color: var(--text-2); cursor: pointer; transition: all .15s; white-space: nowrap;
+    font-family: 'Roboto', sans-serif;
+  }
+  .filter-chip.active { font-weight: 600; }
+
+  /* ── Content ── */
+  #content { flex: 1; overflow-y: auto; }
+  #list-view, #detail-view, #init-view { min-height: 100%; }
+  #detail-view, #init-view { display: none; }
+
+  /* ── Init / indexing screen ── */
+  #init-view {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px; text-align: center; min-height: 60vh;
+  }
+  #init-view.show { display: flex; }
+  .init-icon { font-size: 40px; margin-bottom: 16px; }
+  .init-title {
+    font-family: 'Press Start 2P', monospace; font-size: 11px;
+    color: var(--gold); margin-bottom: 10px; letter-spacing: 1px;
+  }
+  .init-text { font-size: 13px; color: var(--text-2); margin-bottom: 20px; line-height: 1.6; max-width: 320px; }
+  .progress-bar-bg {
+    width: 100%; max-width: 280px; height: 8px; background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 10px;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--gold); border-radius: 4px; width: 0%;
+    transition: width .15s;
+  }
+  .progress-label { font-size: 11px; color: var(--text-muted); }
+
+  /* ── Liste ── */
+  #list-container { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .monster-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px; cursor: pointer;
+    transition: border-color .15s;
+  }
+  .monster-card:active { border-color: var(--gold); }
+  .sprite-box {
+    width: 58px; height: 58px; flex-shrink: 0;
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; font-size: 22px;
+  }
+  .sprite-box img { image-rendering: pixelated; max-width: 52px; max-height: 52px; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-size: 13px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .card-chips { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .chevron { color: var(--text-muted); flex-shrink: 0; }
+
+  /* ── Chips ── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+    border: 1px solid; white-space: nowrap;
+  }
+
+  /* ── Detail ── */
+  #detail-view { padding-bottom: 24px; }
+  #back-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: none; color: var(--gold);
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    padding: 14px 16px; cursor: pointer; width: 100%;
+  }
+  .detail-hero {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px; position: relative;
+  }
+  .detail-hero-bg {
+    position: absolute; inset: 0; opacity: .06;
+    background: radial-gradient(circle at center, var(--el-color, var(--gold)) 0%, transparent 70%);
+  }
+  .detail-sprite {
+    image-rendering: pixelated; max-height: 110px; max-width: 150px;
+    position: relative; z-index: 1;
+  }
+  .detail-name {
+    font-family: 'Press Start 2P', monospace; font-size: 10px;
+    color: var(--gold); margin-top: 10px; text-align: center;
+    line-height: 1.6; position: relative; z-index: 1;
+  }
+  .detail-id { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
+  .detail-section { padding: 0 16px 20px; }
+  .section-header {
+    display: flex; align-items: center; gap: 7px;
+    margin-bottom: 10px;
+  }
+  .section-bar { width: 3px; height: 14px; background: var(--gold); border-radius: 2px; }
+  .section-title {
+    font-family: 'Press Start 2P', monospace; font-size: 8px;
+    color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;
+  }
+
+  /* Stats table */
+  .stats-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 14px; border-bottom: 1px solid var(--divider);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 13px; color: var(--text-2); }
+  .stat-value { font-size: 13px; font-weight: 600; color: var(--text-1); text-align: right; }
+
+  /* Attr grid */
+  .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .attr-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .attr-key { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold); }
+  .attr-val { font-size: 18px; font-weight: 700; color: var(--text-1); }
+
+  /* Elemental bars */
+  .el-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .el-label { width: 72px; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .el-bar-bg { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+  .el-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .el-pct { width: 38px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text-2); flex-shrink: 0; }
+
+  /* Drops */
+  .drop-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 10px; margin-bottom: 7px;
+  }
+  .drop-icon-box {
+    width: 40px; height: 40px; flex-shrink: 0;
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; font-size: 16px;
+  }
+  .drop-icon-box img { image-rendering: pixelated; max-width: 32px; max-height: 32px; }
+  .drop-info { flex: 1; min-width: 0; }
+  .drop-name { font-size: 12px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drop-bar-wrap { margin-top: 4px; }
+  .drop-bar-bg { height: 4px; background: var(--bg-elevated); border-radius: 2px; overflow: hidden; }
+  .drop-bar-fill { height: 100%; border-radius: 2px; }
+  .drop-rate { font-size: 11px; font-weight: 600; flex-shrink: 0; }
+
+  /* Spawn maps */
+  .map-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 10px; margin-bottom: 7px;
+  }
+  .map-thumb {
+    width: 60px; height: 60px; flex-shrink: 0;
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .map-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .map-info { flex: 1; }
+  .map-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .map-meta { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+  .map-type-badge {
+    font-size: 10px; color: var(--text-muted); padding: 3px 7px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 4px; flex-shrink: 0;
+  }
+
+  /* Mode chips */
+  .mode-chip {
+    display: inline-block; padding: 5px 10px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 4px; font-size: 11px; color: var(--text-2);
+    margin: 0 6px 6px 0;
+  }
+
+  /* ── Bottom nav ── */
+  #bottom-nav {
+    display: flex; background: var(--bg-card);
+    border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 10px 0; background: none; border: none;
+    color: var(--text-muted); cursor: pointer; font-size: 10px;
+    font-family: 'Roboto', sans-serif; transition: color .15s;
+  }
+  .nav-btn.active { color: var(--gold); }
+  .nav-btn svg { width: 22px; height: 22px; }
+
+  /* ── Spinner / Error ── */
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error-view {
+    display: none; flex-direction: column; align-items: center;
+    gap: 12px; padding: 48px 24px; text-align: center;
+  }
+  #error-view p { color: var(--text-2); font-size: 13px; }
+  .retry-btn {
+    padding: 9px 20px; background: none;
+    border: 1px solid var(--gold-dim); border-radius: 6px;
+    color: var(--gold); font-size: 12px; cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+  }
+  .empty-msg { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 13px; line-height: 1.6; }
+  .footer-note { text-align: center; color: var(--text-muted); font-size: 10px; padding: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <div id="topbar-row">
+      <div id="topbar-title">⚔ RO PRE-RENEWAL DB</div>
+      <button id="refresh-btn" onclick="forceRescan()" title="Re-scanner la base">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+        Sync
+      </button>
+    </div>
+    <div id="search-bar">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="Rechercher…" autocomplete="off">
+      <button id="clear-btn" onclick="clearSearch()">✕</button>
+    </div>
+    <div id="filters"></div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Indexing screen -->
+    <div id="init-view">
+      <div class="init-icon">⚔️</div>
+      <div class="init-title">INDEXATION EN COURS</div>
+      <div class="init-text" id="init-text">
+        Premier lancement : vérification de la connexion à RagnaAPI...
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">0 / 0</div>
+    </div>
+
+    <div id="list-view">
+      <div id="error-view">
+        <svg width="40" height="40" fill="none" stroke="#8A5C12" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01M4.98 19.02a10.5 10.5 0 0114.04 0M.99 15.99a15.5 15.5 0 0122.02 0"/>
+        </svg>
+        <p id="error-msg">Impossible de joindre le serveur.</p>
+        <button class="retry-btn" onclick="forceRescan()">↺ Réessayer</button>
+      </div>
+      <div id="list-container"></div>
+      <div class="footer-note" id="footer-note"></div>
+    </div>
+
+    <div id="detail-view"></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div id="bottom-nav">
+    <button class="nav-btn active" id="nav-monsters" onclick="switchTab('monsters')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
+      </svg>
+      Monstres
+    </button>
+    <button class="nav-btn" id="nav-items" onclick="switchTab('items')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+      </svg>
+      Items
+    </button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+const API = 'https://ragnapi.com/api/v1/old-times';
+const CACHE_KEY = 'ro_db_cache_v3';
+const CONCURRENCY = 8;
+
+// Plages d'IDs scannées. RagnaAPI n'a pas d'endpoint de liste,
+// donc on construit notre propre index en testant ces IDs une seule fois,
+// puis on garde tout en cache local (localStorage).
+// Couverture large : inclut tous les MVP et monstres des derniers donjons
+// pré-renewal (Thanatos Tower, Nidhoggur, Juperos...).
+const MONSTER_RANGES = [[1001, 1999]];
+const ITEM_RANGES = [
+  [501, 620],   // potions, soins, usables
+  [901, 1050],  // matériaux de drop (jellopy, fluff, cartes brisées...)
+  [1101, 1500], // armes (dagues, épées, lances, arcs, deux-mains...)
+  [2301, 2520], // headgears + armures/garments/chaussures/accessoires
+  [4001, 4400], // cartes (incl. Thanatos Tower / Nidhoggur)
+  [7001, 7200], // matériaux divers / quêtes
+];
+
+// ── Stratégie réseau ──────────────────────────────────────────────────────────
+// Certains navigateurs bloquent les requêtes fetch() vers des domaines externes
+// quand la page est ouverte en file://. On détecte ça au démarrage et on bascule
+// automatiquement sur un proxy CORS public si nécessaire.
+const FETCH_MODES = [
+  { name: 'direct',     build: (url) => url },
+  { name: 'codetabs',   build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` },
+  { name: 'allorigins', build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+  { name: 'corsproxy',  build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}` },
+];
+// Index du mode qui a fonctionné en dernier (on l'essaie en premier la prochaine fois)
+let preferredModeIndex = 0;
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+let DB = { monsters: [], items: [] };
+let state = {
+  tab: 'monsters',
+  filtered: [],
+  query: '',
+  filter: null,
+  inDetail: false,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS - traduction / couleurs
+// ════════════════════════════════════════════════════════════════════════════
+const EL_FR   = { fire:'Feu', water:'Eau', wind:'Vent', earth:'Terre', holy:'Sacré',
+                   shadow:'Ombre', poison:'Poison', undead:'Mort-vivant', ghost:'Fantôme', neutral:'Neutre' };
+const EL_COLOR= { fire:'#E84040', water:'#4096E8', wind:'#48C774', earth:'#A0804A',
+                   holy:'#FFF08A', shadow:'#9B59B6', poison:'#2ECC71', undead:'#95A5A6',
+                   ghost:'#7F8C8D', neutral:'#BDC3C7' };
+const EL_ICON = { fire:'🔥', water:'💧', wind:'🌀', earth:'🌿', holy:'✨',
+                   shadow:'🌑', poison:'☠', undead:'💀', ghost:'👻', neutral:'⬜' };
+const RACE_FR  = { angel:'Ange', demihuman:'Demi-humain', 'demi-human':'Demi-humain',
+                    dragon:'Dragon', formless:'Sans forme', insect:'Insecte',
+                    plant:'Plante', undead:'Mort-vivant', brute:'Brute', fish:'Poisson' };
+const RACE_COLOR={ angel:'#FFF08A', demihuman:'#E8A040', 'demi-human':'#E8A040',
+                    dragon:'#E84040', formless:'#BDC3C7', insect:'#48C774',
+                    plant:'#27AE60', undead:'#95A5A6', brute:'#A0804A', fish:'#4096E8' };
+const TYPE_COLOR={ weapon:'#E84040', armor:'#4A90D9', card:'#F5A623',
+                    usable:'#48C774', etc:'#8888AA', ammo:'#BDC3C7' };
+const TYPE_FR  = { weapon:'Arme', armor:'Armure', card:'Carte',
+                    usable:'Consommable', etc:'Divers', ammo:'Munition' };
+
+function elColor(e){ return EL_COLOR[e?.toLowerCase()] || '#BDC3C7'; }
+function elFr(e)   { return EL_FR[e?.toLowerCase()] || e || 'Neutre'; }
+function raceFr(r) { return RACE_FR[r?.toLowerCase()] || r; }
+function raceColor(r){ return RACE_COLOR[r?.toLowerCase()] || '#8888AA'; }
+function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
+function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
+function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function modesFr(m) {
+  const map = { aggressive:'Agressif', changes_target_if_attacked:'Change de cible si attaqué',
+    assists:'Appelle des alliés', cast_sensor_idle:'Détecte les sorts',
+    detector:'Détecteur', boss:'Boss', mvp:'MVP', looter:'Looteur', plant:'Immobile' };
+  return map[m] || displayName(m);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// INDEXING - scan RagnaAPI une fois, cache localStorage
+// ════════════════════════════════════════════════════════════════════════════
+function buildIdList(ranges) {
+  const ids = [];
+  for (const [start, end] of ranges) {
+    for (let i = start; i <= end; i++) ids.push(i);
+  }
+  return ids;
+}
+
+// Essaie chaque mode dans l'ordre (en commençant par le dernier qui a marché),
+// avec un petit délai entre tentatives pour ne pas se faire bannir des proxys.
+async function fetchOne(kind, id, retries = 1) {
+  const url = `${API}/${kind}/${id}`;
+  const order = [...FETCH_MODES.keys()].sort((a, b) =>
+    a === preferredModeIndex ? -1 : b === preferredModeIndex ? 1 : 0);
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    for (const idx of order) {
+      const mode = FETCH_MODES[idx];
+      try {
+        const res = await fetch(mode.build(url), { cache: 'no-store' });
+        if (!res.ok) {
+          if (res.status === 404) return { notFound: true };
+          continue; // 4xx/5xx du proxy -> essaie le mode suivant
+        }
+        const data = await res.json();
+        if (kind === 'monsters' && !data.monster_id) continue;
+        if (kind === 'items' && !data.item_id && !data.name) continue;
+        preferredModeIndex = idx; // ce mode fonctionne, on le privilégie
+        return { data };
+      } catch (e) {
+        continue; // essaie le mode suivant
+      }
+    }
+    if (attempt < retries) await sleep(400);
+  }
+  return { error: true };
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function scanWithConcurrency(kind, ids, onProgress, onBatchDone) {
+  const results = [];
+  const notFound = [];
+  const failed = [];
+  let cursor = 0;
+  let done = 0;
+  let sinceLastSave = 0;
+
+  async function worker() {
+    while (cursor < ids.length) {
+      const id = ids[cursor++];
+      const res = await fetchOne(kind, id);
+      if (res.data) results.push(res.data);
+      else if (res.notFound) notFound.push(id);
+      else failed.push(id); // erreur réseau -> on retentera la prochaine fois
+
+      done++;
+      sinceLastSave++;
+      onProgress(done);
+
+      if (sinceLastSave >= 30) {
+        sinceLastSave = 0;
+        await onBatchDone(results.splice(0), notFound.splice(0));
+      }
+    }
+  }
+
+  const workers = Array.from({ length: CONCURRENCY }, worker);
+  await Promise.all(workers);
+  await onBatchDone(results, notFound);
+  return { failedIds: failed };
+}
+
+// ── Cache structure ──
+// {
+//   version: 3,
+//   monsters: [...],          items: [...]
+//   scannedMonsterIds: [...], scannedItemIds: [...]   (trouvés OU confirmés absents)
+// }
+function getCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.monsters || !parsed.items) return null;
+    if (!parsed.scannedMonsterIds) parsed.scannedMonsterIds = parsed.monsters.map(m => m.monster_id);
+    if (!parsed.scannedItemIds) parsed.scannedItemIds = parsed.items.map(i => i.item_id);
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveCache(cache) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {
+    console.warn('localStorage plein, cache partiel non sauvegardé', e);
+  }
+}
+
+function loadFromCache() {
+  const cache = getCache();
+  if (!cache || cache.monsters.length === 0 && cache.items.length === 0) return false;
+  DB = { monsters: cache.monsters, items: cache.items };
+  return true;
+}
+
+async function runIndexing() {
+  showInitView(true);
+
+  let cache = getCache() || {
+    version: 3, monsters: [], items: [],
+    scannedMonsterIds: [], scannedItemIds: [],
+  };
+
+  const allMonsterIds = buildIdList(MONSTER_RANGES);
+  const allItemIds = buildIdList(ITEM_RANGES);
+  const scannedM = new Set(cache.scannedMonsterIds);
+  const scannedI = new Set(cache.scannedItemIds);
+  const monsterIds = allMonsterIds.filter(id => !scannedM.has(id));
+  const itemIds = allItemIds.filter(id => !scannedI.has(id));
+
+  const total = monsterIds.length + itemIds.length;
+  if (total === 0) {
+    showInitView(false);
+    DB = { monsters: cache.monsters, items: cache.items };
+    switchTab(state.tab, true);
+    return;
+  }
+
+  document.getElementById('init-text').textContent =
+    `Indexation depuis RagnaAPI : ${cache.monsters.length + cache.items.length} déjà en cache, ` +
+    `${total} restants. Cela peut prendre du temps — ta progression est sauvegardée en continu, ` +
+    `tu peux fermer et relancer "Sync" plus tard pour continuer.`;
+  updateProgress(cache.monsters.length + cache.items.length, allMonsterIds.length + allItemIds.length);
+
+  let done = 0;
+  const baseDone = (allMonsterIds.length - monsterIds.length) + (allItemIds.length - itemIds.length);
+
+  async function saveBatch(kind, newData, newNotFound) {
+    if (kind === 'monsters') {
+      cache.monsters.push(...newData);
+      cache.scannedMonsterIds.push(...newData.map(d => d.monster_id), ...newNotFound);
+    } else {
+      cache.items.push(...newData);
+      cache.scannedItemIds.push(...newData.map(d => d.item_id), ...newNotFound);
+    }
+    saveCache(cache);
+    DB = { monsters: cache.monsters, items: cache.items };
+  }
+
+  await scanWithConcurrency('monsters', monsterIds, (d) => {
+    updateProgress(baseDone + d, allMonsterIds.length + allItemIds.length);
+  }, (data, nf) => saveBatch('monsters', data, nf));
+
+  done = monsterIds.length;
+  await scanWithConcurrency('items', itemIds, (d) => {
+    updateProgress(baseDone + done + d, allMonsterIds.length + allItemIds.length);
+  }, (data, nf) => saveBatch('items', data, nf));
+
+  showInitView(false);
+
+  if (cache.monsters.length === 0 && cache.items.length === 0) {
+    showError(
+      'Aucune donnée reçue de RagnaAPI, même avec les proxys de secours. ' +
+      'Cela vient probablement du fait que cette page est ouverte en local (file://), ' +
+      'ce qui bloque les requêtes réseau dans certains navigateurs. ' +
+      'Solution recommandée : héberge ce fichier en ligne (ex: GitHub Pages, gratuit, ' +
+      'configurable depuis ton téléphone) puis ouvre l\'URL https://... — ' +
+      'demande-moi le guide étape par étape si besoin.'
+    );
+    return;
+  }
+
+  switchTab(state.tab, true);
+}
+
+function forceRescan(resetAll) {
+  if (resetAll) localStorage.removeItem(CACHE_KEY);
+  hideError();
+  runIndexing();
+}
+
+function updateProgress(done, total) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${done} / ${total} (${pct}%)`;
+}
+
+function showInitView(show) {
+  document.getElementById('init-view').classList.toggle('show', show);
+  document.getElementById('list-view').style.display = show ? 'none' : 'block';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB SWITCH / FILTERS
+// ════════════════════════════════════════════════════════════════════════════
+function switchTab(tab, force) {
+  if (state.tab === tab && !state.inDetail && !force) return;
+  state.tab = tab;
+  state.filter = null;
+  state.query = '';
+  state.inDetail = false;
+  document.getElementById('search-input').value = '';
+  document.getElementById('clear-btn').style.display = 'none';
+  showList();
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + tab).classList.add('active');
+  buildFilters();
+  applyFilter();
+  updateFooterNote();
+}
+
+function updateFooterNote() {
+  const n = state.tab === 'monsters' ? DB.monsters.length : DB.items.length;
+  const totalRange = state.tab === 'monsters'
+    ? buildIdList(MONSTER_RANGES).length
+    : buildIdList(ITEM_RANGES).length;
+  const label = state.tab === 'monsters' ? 'monstres' : 'items';
+  const complete = n >= totalRange ? '✓ complet' : `· "Sync" pour continuer`;
+  document.getElementById('footer-note').textContent =
+    `📦 Base locale : ${n} ${label} indexés ${complete}`;
+}
+
+function buildFilters() {
+  const el = document.getElementById('filters');
+  el.innerHTML = '';
+  const items = state.tab === 'monsters'
+    ? [null, 'fire','water','wind','earth','holy','shadow','poison','undead','ghost','neutral']
+    : [null, 'weapon','armor','card','usable','etc','ammo'];
+
+  items.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip' + (state.filter === f ? ' active' : '');
+    const color = f === null ? '#F5A623'
+      : state.tab === 'monsters' ? elColor(f) : typeColor(f);
+    const label = f === null ? 'Tous'
+      : state.tab === 'monsters' ? elFr(f) : typeFr(f);
+
+    if (state.filter === f) {
+      btn.style.color = color;
+      btn.style.borderColor = color + '99';
+      btn.style.background = color + '22';
+    }
+    btn.textContent = (state.tab === 'monsters' && f) ? `${EL_ICON[f]||''} ${label}` : label;
+    btn.onclick = () => { state.filter = f; buildFilters(); applyFilter(); };
+    el.appendChild(btn);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FILTER + RENDER LIST
+// ════════════════════════════════════════════════════════════════════════════
+function applyFilter() {
+  hideError();
+  let data = state.tab === 'monsters' ? DB.monsters : DB.items;
+  const q = state.query.toLowerCase().trim();
+
+  if (q) {
+    data = data.filter(d => {
+      const name = (d.monster_info || d.name || '').toLowerCase();
+      return name.includes(q) || String(d.monster_id || d.item_id).includes(q);
+    });
+  }
+
+  if (state.filter) {
+    if (state.tab === 'monsters') {
+      data = data.filter(d => (d.type || '').toLowerCase() === state.filter);
+    } else {
+      data = data.filter(d => (d.type || '').toLowerCase() === state.filter);
+    }
+  }
+
+  // Tri alphabétique
+  data = [...data].sort((a, b) => {
+    const na = (a.monster_info || a.name || '');
+    const nb = (b.monster_info || b.name || '');
+    return na.localeCompare(nb);
+  });
+
+  state.filtered = data;
+  renderList();
+}
+
+function renderList() {
+  const container = document.getElementById('list-container');
+  container.innerHTML = '';
+
+  if (state.filtered.length === 0) {
+    container.innerHTML = `<div class="empty-msg">${
+      state.query ? `Aucun résultat pour "${state.query}"` : 'Aucun résultat pour ce filtre'
+    }</div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  state.filtered.forEach(item => {
+    frag.appendChild(state.tab === 'monsters'
+      ? buildMonsterCard(item)
+      : buildItemCard(item));
+  });
+  container.appendChild(frag);
+}
+
+function buildMonsterCard(m) {
+  const id = m.monster_id;
+  const name = displayName(m.monster_info);
+  const el = m.type || 'neutral';
+  const color = elColor(el);
+  const div = document.createElement('div');
+  div.className = 'monster-card';
+  div.innerHTML = `
+    <div class="sprite-box">
+      ${m.gif ? `<img src="${m.gif}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">` : '🐾'}
+    </div>
+    <div class="card-info">
+      <div class="card-name">${name}</div>
+      <div class="card-sub">ID: ${id} · Lv.${m.main_stats?.level || '?'}</div>
+      <div class="card-chips">
+        <span class="chip" style="color:${color};border-color:${color}44;background:${color}18">
+          ${EL_ICON[el]||''} ${elFr(el)}
+        </span>
+        ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}44;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
+      </div>
+    </div>
+    <svg class="chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  `;
+  div.onclick = () => openMonsterDetail(id);
+  return div;
+}
+
+function buildItemCard(item) {
+  const id = item.item_id;
+  const name = displayName(item.name);
+  const type = item.type || 'etc';
+  const color = typeColor(type);
+  const div = document.createElement('div');
+  div.className = 'monster-card';
+  div.innerHTML = `
+    <div class="sprite-box">
+      ${item.img ? `<img src="${item.img}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">` : '📦'}
+    </div>
+    <div class="card-info">
+      <div class="card-name">${name}</div>
+      <div class="card-sub">ID: ${id}</div>
+      <div class="card-chips">
+        <span class="chip" style="color:${color};border-color:${color}44;background:${color}18">
+          ${typeFr(type)}
+        </span>
+      </div>
+    </div>
+    <svg class="chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  `;
+  div.onclick = () => openItemDetail(id);
+  return div;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MONSTER DETAIL
+// ════════════════════════════════════════════════════════════════════════════
+function openMonsterDetail(id) {
+  const m = DB.monsters.find(x => x.monster_id === id);
+  if (!m) return;
+  showDetail();
+  renderMonsterDetail(m);
+}
+
+function statRow(label, val, color, last=false) {
+  return `<div class="stat-row" ${last?'style="border-bottom:none"':''}>
+    <span class="stat-label">${label}</span>
+    <span class="stat-value" style="color:${color||'var(--text-1)'}">${val ?? '—'}</span>
+  </div>`;
+}
+
+function renderMonsterDetail(m) {
+  const name = displayName(m.monster_info);
+  const el = m.type || 'neutral';
+  const elColor_ = elColor(el);
+  const s = m.main_stats || {};
+  const a = m.main_atb || {};
+  const ed = m.elementalDamage || {};
+  const drops = [...(m.drops || [])].sort((a,b) => b.rate - a.rate);
+  const maps = m.maps || [];
+  const modes = m.skills?.mode || [];
+
+  const elEntries = Object.entries(ed).map(([k,v]) => ({k, v: Number(v)}))
+    .sort((a,b) => b.v - a.v);
+
+  const dv = document.getElementById('detail-view');
+  dv.innerHTML = `
+    <button id="back-btn" onclick="goBack()">← Retour</button>
+
+    <div class="detail-hero" style="--el-color:${elColor_}">
+      <div class="detail-hero-bg"></div>
+      ${m.gif ? `<img class="detail-sprite" src="${m.gif}" alt="${name}" onerror="this.style.display='none'">` : '<div style="height:80px;display:flex;align-items:center;font-size:48px">🐾</div>'}
+      <div class="detail-name">${name}</div>
+      <div class="detail-id">ID : ${m.monster_id}</div>
+    </div>
+
+    <div class="detail-badges">
+      <span class="chip" style="color:${elColor_};border-color:${elColor_}55;background:${elColor_}18">
+        ${EL_ICON[el]||''} ${elFr(el)} Lv.${m.element_power||1}
+      </span>
+      ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}55;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
+      ${m.size ? `<span class="chip" style="color:var(--text-2);border-color:var(--border)">${{small:'Petit',medium:'Moyen',large:'Grand'}[m.size]||m.size}</span>` : ''}
+    </div>
+
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Stats</div></div>
+      <div class="stats-card">
+        ${statRow('HP', s.hp, '#E84040')}
+        ${statRow('Niveau', s.level, '#F5A623')}
+        ${statRow('Attaque', s.attack)}
+        ${s.magic_attack ? statRow('Attaque Magique', s.magic_attack) : ''}
+        ${statRow('DEF', s.def)}
+        ${statRow('M.DEF', s.m_def)}
+        ${statRow('Esquive', s.flee)}
+        ${statRow('Toucher', s.hit)}
+        ${statRow('ASPD', s.aspd)}
+        ${statRow('Vitesse', s.move_speed)}
+        ${statRow('EXP Base', s.base_exp, '#4A90D9')}
+        ${statRow('EXP Classe', s.job_exp, '#4A90D9', true)}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Attributs</div></div>
+      <div class="attr-grid">
+        ${['STR','AGI','VIT','INT','DEX','LUK'].map(k => `
+          <div class="attr-box">
+            <div class="attr-key">${k}</div>
+            <div class="attr-val">${a[k.toLowerCase()] ?? 0}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${elEntries.length ? `
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Résistances élémentaires</div></div>
+      <div class="stats-card" style="padding:12px">
+      ${elEntries.map(({k,v}) => {
+        const c = elColor(k);
+        const fr = elFr(k);
+        const pct = Math.min(v/200, 1);
+        return `<div class="el-row">
+          <div class="el-label" style="color:${c}">${fr}</div>
+          <div class="el-bar-bg"><div class="el-bar-fill" style="width:${pct*100}%;background:${v>100?c:'var(--text-muted)'}"></div></div>
+          <div class="el-pct" style="color:${v>100?'#E84040':'var(--text-muted)'}">${v}%</div>
+        </div>`;
+      }).join('')}
+      </div>
+    </div>` : ''}
+
+    ${drops.length ? `
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Drops</div></div>
+      ${drops.map(d => {
+        const pct = d.rate;
+        const barColor = pct>=50?'#E84040':pct>=1?'#F5A623':'#4A90D9';
+        const rateColor= pct>=50?'#E84040':pct>=1?'#F5A623':'#8888AA';
+        const rateLabel= pct>=1?pct.toFixed(2)+'%':pct.toFixed(3)+'%';
+        return `<div class="drop-row">
+          <div class="drop-icon-box">
+            ${d.img?`<img src="${d.img}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">`:'📦'}
+          </div>
+          <div class="drop-info">
+            <div class="drop-name">${displayName(d.name)}</div>
+            <div class="drop-bar-wrap">
+              <div class="drop-bar-bg"><div class="drop-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+            </div>
+          </div>
+          <div class="drop-rate" style="color:${rateColor}">${rateLabel}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    ${maps.length ? `
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
+      ${maps.map(mp => `<div class="map-row">
+        <div class="map-thumb">
+          ${mp.img?`<img src="${mp.img}" loading="lazy" onerror="this.parentElement.textContent='🗺'">`:'🗺'}
+        </div>
+        <div class="map-info">
+          <div class="map-name">${displayName(mp.name)}${mp.number?' '+mp.number:''}</div>
+          <div class="map-meta">👥 ${mp.amount} monstres · ⏱ ${mp.frequency}</div>
+        </div>
+        <div class="map-type-badge">${mp.type}</div>
+      </div>`).join('')}
+    </div>` : ''}
+
+    ${modes.length ? `
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Comportement</div></div>
+      <div>${modes.map(m=>`<span class="mode-chip">${modesFr(m)}</span>`).join('')}</div>
+    </div>` : ''}
+  `;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ITEM DETAIL
+// ════════════════════════════════════════════════════════════════════════════
+function openItemDetail(id) {
+  const item = DB.items.find(x => x.item_id === id);
+  if (!item) return;
+  showDetail();
+  renderItemDetail(item);
+}
+
+function renderItemDetail(item) {
+  const name = displayName(item.name);
+  const type = item.type || 'etc';
+  const color = typeColor(type);
+  const bonus = item.bonus || {};
+  const bonusEntries = Object.entries(bonus);
+  const dv = document.getElementById('detail-view');
+  dv.innerHTML = `
+    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <div class="detail-hero">
+      <div class="detail-hero-bg" style="--el-color:${color}"></div>
+      ${item.img?`<img class="detail-sprite" src="${item.img}" style="max-height:80px" onerror="this.style.display='none'">`:'<div style="font-size:48px;position:relative">📦</div>'}
+      <div class="detail-name">${name}</div>
+      <div class="detail-id">ID : ${item.item_id}</div>
+    </div>
+    <div class="detail-badges">
+      <span class="chip" style="color:${color};border-color:${color}55;background:${color}18">${typeFr(type)}</span>
+      ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Nv. ${item.required_level}</span>`:''}
+    </div>
+    ${item.description?`<div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Description</div></div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text-2);line-height:1.6">${item.description}</div>
+    </div>`:''}
+    <div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Infos</div></div>
+      <div class="stats-card">
+        ${item.weight!=null?statRow('Poids', (item.weight/10)+' w'):''}
+        ${item.buy_price!=null?statRow('Prix achat', item.buy_price+' z', '#F5A623'):''}
+        ${item.sell_price!=null?statRow('Prix vente', item.sell_price+' z', '#8A5C12'):''}
+        ${!item.weight && !item.buy_price && !item.sell_price ? statRow('Détails', 'Non disponibles', null, true) : ''}
+      </div>
+    </div>
+    ${bonusEntries.length?`<div class="detail-section">
+      <div class="section-header"><div class="section-bar"></div><div class="section-title">Bonus</div></div>
+      <div class="stats-card">
+        ${bonusEntries.map(([k,v],i)=>statRow(k, JSON.stringify(v),'#48C774', i===bonusEntries.length-1)).join('')}
+      </div>
+    </div>`:''}
+  `;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════════════════════
+function showList() {
+  document.getElementById('list-view').style.display = 'block';
+  document.getElementById('detail-view').style.display = 'none';
+  state.inDetail = false;
+}
+function showDetail() {
+  document.getElementById('list-view').style.display = 'none';
+  document.getElementById('detail-view').style.display = 'block';
+  document.getElementById('content').scrollTop = 0;
+  state.inDetail = true;
+}
+function goBack() {
+  showList();
+  document.getElementById('content').scrollTop = 0;
+}
+function showError(msg) {
+  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('error-view').style.display = 'flex';
+  document.getElementById('list-container').innerHTML = '';
+}
+function hideError() {
+  document.getElementById('error-view').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEARCH
+// ════════════════════════════════════════════════════════════════════════════
+let searchTimer;
+document.getElementById('search-input').addEventListener('input', function() {
+  state.query = this.value;
+  document.getElementById('clear-btn').style.display = this.value ? 'block' : 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilter, 200);
+});
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('clear-btn').style.display = 'none';
+  state.query = '';
+  applyFilter();
+}
+
+// Bouton retour Android
+window.addEventListener('popstate', () => { if (state.inDetail) goBack(); });
+document.addEventListener('click', e => {
+  if (state.inDetail && e.target.closest('#back-btn')) history.back();
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════════════
+(async function init() {
+  buildFilters();
+  if (loadFromCache() && (DB.monsters.length > 0 || DB.items.length > 0)) {
+    // On a déjà des données en cache : on les affiche immédiatement.
+    switchTab('monsters', true);
+  } else {
+    await runIndexing();
+  }
+})();
+</script>
+</body>
+</html>
