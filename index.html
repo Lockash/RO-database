@@ -1178,7 +1178,7 @@ function clearSearch() {
   document.getElementById('admin-btn').classList.toggle('on', ADMIN.enabled);
   buildFilters();
   // On essaie toujours de charger ro_data.json (peut avoir été mis à jour),
-  // avec repli automatique sur le cache local si le réseau échoue.
+  // avec repli automatique sur le cache local si le réseau échoue 1.
   await loadData();
 })();
 </script>
