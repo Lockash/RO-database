@@ -107,6 +107,7 @@
     height: 100%; background: var(--gold); border-radius: 4px; width: 0%;
     transition: width .15s;
   }
+  @keyframes pulse { from { opacity: .4; } to { opacity: 1; } }
   .progress-label { font-size: 11px; color: var(--text-muted); }
 
   /* ── Liste ── */
@@ -361,12 +362,6 @@
       <div id="topbar-title">⚔ RO PRE-RENEWAL DB</div>
       <div style="display:flex">
         <button id="admin-btn" onclick="openAdminPanel()" title="Mode admin">⚙️</button>
-        <button id="refresh-btn" onclick="forceRescan()" title="Re-scanner la base">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-          </svg>
-          Sync
-        </button>
       </div>
     </div>
     <div id="search-bar">
@@ -382,15 +377,15 @@
   <!-- Content -->
   <div id="content">
 
-    <!-- Indexing screen -->
+    <!-- Loading screen -->
     <div id="init-view">
       <div class="init-icon">⚔️</div>
-      <div class="init-title">INDEXATION EN COURS</div>
+      <div class="init-title">CHARGEMENT</div>
       <div class="init-text" id="init-text">
-        Premier lancement : vérification de la connexion à RagnaAPI...
+        Chargement de la base de données (ro_data.json)...
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-      <div class="progress-label" id="progress-label">0 / 0</div>
+      <div class="progress-label" id="progress-label"></div>
     </div>
 
     <div id="list-view">
@@ -399,7 +394,7 @@
           <path d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01M4.98 19.02a10.5 10.5 0 0114.04 0M.99 15.99a15.5 15.5 0 0122.02 0"/>
         </svg>
         <p id="error-msg">Impossible de joindre le serveur.</p>
-        <button class="retry-btn" onclick="forceRescan()">↺ Réessayer</button>
+        <button class="retry-btn" onclick="loadData()">↺ Réessayer</button>
       </div>
       <div id="list-container"></div>
       <div class="footer-note" id="footer-note"></div>
@@ -430,46 +425,9 @@
 // ════════════════════════════════════════════════════════════════════════════
 // CONFIG
 // ════════════════════════════════════════════════════════════════════════════
-const API = 'https://ragnapi.com/api/v1/old-times';
-const CACHE_KEY = 'ro_db_cache_v4';
+const DATA_URL = 'ro_data.json'; // fichier généré par scanner.html, à côté de index.html
 const ADMIN_KEY = 'ro_admin_settings_v1';
-
-// Hébergé en https (GitHub Pages) : pas besoin de proxy dans la grande majorité
-// des cas, donc on peut paralléliser plus fort. Un timeout par requête évite
-// qu'une requête lente ne bloque tout.
-const CONCURRENCY = 24;
-const FETCH_TIMEOUT_MS = 6000;
-
-// On limite le nombre de requêtes par session de sync pour que chaque appui
-// sur "Sync" reste rapide (quelques dizaines de secondes max). On reprend
-// ensuite exactement où on s'est arrêté.
-const MAX_PER_SESSION = 400;
-
-// Plages d'IDs scannées. RagnaAPI n'a pas d'endpoint de liste,
-// donc on construit notre propre index en testant ces IDs une seule fois,
-// puis on garde tout en cache local (localStorage).
-// Couverture large : inclut tous les MVP et monstres des derniers donjons
-// pré-renewal (Thanatos Tower, Nidhoggur, Juperos...).
-const MONSTER_RANGES = [[1001, 1999]];
-const ITEM_RANGES = [
-  [501, 620],   // potions, soins, usables
-  [901, 1050],  // matériaux de drop (jellopy, fluff, cartes brisées...)
-  [1101, 1200], // armes courantes
-  [2301, 2400], // headgears / armures courantes
-  [4001, 4400], // cartes (incl. Thanatos Tower / Nidhoggur)
-  [7001, 7100], // matériaux divers / quêtes
-];
-
-// ── Stratégie réseau ──────────────────────────────────────────────────────────
-// En https (GitHub Pages), le direct devrait suffire. On garde des proxys de
-// secours seulement en dernier recours (et on ne les martèle pas).
-const FETCH_MODES = [
-  { name: 'direct',     build: (url) => url },
-  { name: 'codetabs',   build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` },
-  { name: 'allorigins', build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
-];
-// Index du mode qui a fonctionné en dernier (on l'essaie en premier la prochaine fois)
-let preferredModeIndex = 0;
+const CACHE_KEY = 'ro_db_cache_v5';
 
 // ════════════════════════════════════════════════════════════════════════════
 // STATE
@@ -541,193 +499,75 @@ function modesFr(m) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// INDEXING - scan RagnaAPI une fois, cache localStorage
+// DATA LOADING - charge ro_data.json (généré par scanner.html) une seule fois,
+// puis garde une copie en localStorage pour les lancements suivants (offline).
 // ════════════════════════════════════════════════════════════════════════════
-function buildIdList(ranges) {
-  const ids = [];
-  for (const [start, end] of ranges) {
-    for (let i = start; i <= end; i++) ids.push(i);
-  }
-  return ids;
-}
-
-// Essaie chaque mode dans l'ordre (en commençant par le dernier qui a marché),
-// avec un petit délai entre tentatives pour ne pas se faire bannir des proxys.
-async function fetchOne(kind, id) {
-  const url = `${API}/${kind}/${id}`;
-  const order = [...FETCH_MODES.keys()].sort((a, b) =>
-    a === preferredModeIndex ? -1 : b === preferredModeIndex ? 1 : 0);
-
-  for (const idx of order) {
-    const mode = FETCH_MODES[idx];
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const res = await fetch(mode.build(url), { cache: 'no-store', signal: controller.signal });
-      clearTimeout(timer);
-      if (!res.ok) {
-        if (res.status === 404) return { notFound: true };
-        continue; // 4xx/5xx -> essaie le mode suivant
-      }
-      const data = await res.json();
-      if (kind === 'monsters' && !data.monster_id) continue;
-      if (kind === 'items' && !data.item_id && !data.name) continue;
-      preferredModeIndex = idx; // ce mode fonctionne, on le privilégie
-      return { data };
-    } catch (e) {
-      clearTimeout(timer);
-      continue; // timeout ou erreur réseau -> essaie le mode suivant
-    }
-  }
-  return { error: true };
-}
-
-async function scanWithConcurrency(kind, ids, onProgress, onBatchDone) {
-  const results = [];
-  const notFound = [];
-  const failed = [];
-  let cursor = 0;
-  let done = 0;
-  let sinceLastSave = 0;
-
-  async function worker() {
-    while (cursor < ids.length) {
-      const id = ids[cursor++];
-      const res = await fetchOne(kind, id);
-      if (res.data) results.push(res.data);
-      else if (res.notFound) notFound.push(id);
-      else failed.push(id); // erreur réseau -> on retentera la prochaine fois
-
-      done++;
-      sinceLastSave++;
-      onProgress(done);
-
-      if (sinceLastSave >= 30) {
-        sinceLastSave = 0;
-        await onBatchDone(results.splice(0), notFound.splice(0));
-      }
-    }
-  }
-
-  const workers = Array.from({ length: CONCURRENCY }, worker);
-  await Promise.all(workers);
-  await onBatchDone(results, notFound);
-  return { failedIds: failed };
-}
-
-function getCache() {
+function loadFromCache() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
+    if (!raw) return false;
     const parsed = JSON.parse(raw);
-    if (!parsed.monsters || !parsed.items) return null;
-    if (!parsed.scannedMonsterIds) parsed.scannedMonsterIds = parsed.monsters.map(m => m.monster_id);
-    if (!parsed.scannedItemIds) parsed.scannedItemIds = parsed.items.map(i => i.item_id);
-    return parsed;
+    if (!parsed.monsters || !parsed.items) return false;
+    if (parsed.monsters.length === 0 && parsed.items.length === 0) return false;
+    DB = { monsters: parsed.monsters, items: parsed.items };
+    return true;
   } catch (e) {
-    return null;
+    return false;
   }
 }
 
-function saveCache(cache) {
+function saveToCache() {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(DB));
   } catch (e) {
-    console.warn('localStorage plein, cache partiel non sauvegardé', e);
+    console.warn('Impossible de sauvegarder en cache local', e);
   }
 }
 
-function loadFromCache() {
-  const cache = getCache();
-  if (!cache || cache.monsters.length === 0 && cache.items.length === 0) return false;
-  DB = { monsters: cache.monsters, items: cache.items };
-  return true;
-}
-
-function emptyCache() {
-  return { version: 4, monsters: [], items: [], scannedMonsterIds: [], scannedItemIds: [] };
-}
-
-// Indexe par petits lots (MAX_PER_SESSION requêtes max par appui sur "Sync").
-// Traite d'abord TOUS les monstres, puis les items, pour avoir rapidement
-// une base monstres utilisable même si les items prennent plusieurs sync.
-async function runIndexing() {
-  showInitView(true);
-
-  let cache = getCache() || emptyCache();
-
-  const allMonsterIds = buildIdList(MONSTER_RANGES);
-  const allItemIds = buildIdList(ITEM_RANGES);
-  const scannedM = new Set(cache.scannedMonsterIds);
-  const scannedI = new Set(cache.scannedItemIds);
-  const remainingMonsterIds = allMonsterIds.filter(id => !scannedM.has(id));
-  const remainingItemIds = allItemIds.filter(id => !scannedI.has(id));
-
-  // Phase courante : monstres en priorité, items une fois les monstres finis
-  let phase, idsToScan;
-  if (remainingMonsterIds.length > 0) {
-    phase = 'monsters';
-    idsToScan = remainingMonsterIds.slice(0, MAX_PER_SESSION);
-  } else if (remainingItemIds.length > 0) {
-    phase = 'items';
-    idsToScan = remainingItemIds.slice(0, MAX_PER_SESSION);
-  } else {
-    // Tout est déjà indexé
-    showInitView(false);
-    DB = { monsters: cache.monsters, items: cache.items };
-    switchTab(state.tab, true);
-    return;
-  }
-
-  const phaseLabel = phase === 'monsters' ? 'monstres' : 'items';
-  const totalForPhase = phase === 'monsters' ? allMonsterIds.length : allItemIds.length;
-  const alreadyForPhase = phase === 'monsters' ? cache.monsters.length : cache.items.length;
-
-  document.getElementById('init-text').textContent =
-    `Indexation des ${phaseLabel} : ${alreadyForPhase} / ${totalForPhase} déjà en cache. ` +
-    `Traitement de ${idsToScan.length} de plus dans cette session. ` +
-    `Réappuie sur "Sync" pour continuer après.`;
-  updateProgress(alreadyForPhase, totalForPhase);
-
-  async function saveBatch(kind, newData, newNotFound) {
-    if (kind === 'monsters') {
-      cache.monsters.push(...newData);
-      cache.scannedMonsterIds.push(...newData.map(d => d.monster_id), ...newNotFound);
-    } else {
-      cache.items.push(...newData);
-      cache.scannedItemIds.push(...newData.map(d => d.item_id), ...newNotFound);
-    }
-    saveCache(cache);
-    DB = { monsters: cache.monsters, items: cache.items };
-  }
-
-  await scanWithConcurrency(phase, idsToScan, (d) => {
-    updateProgress(alreadyForPhase + d, totalForPhase);
-  }, (data, nf) => saveBatch(phase, data, nf));
-
-  showInitView(false);
-
-  if (cache.monsters.length === 0 && cache.items.length === 0) {
-    showError(
-      'Aucune donnée reçue de RagnaAPI. Vérifie ta connexion internet, ' +
-      'puis appuie sur "Sync" pour réessayer.'
-    );
-    return;
-  }
-
-  switchTab(state.tab, true);
-}
-
-function forceRescan(resetAll) {
-  if (resetAll) localStorage.removeItem(CACHE_KEY);
+async function loadData() {
   hideError();
-  runIndexing();
+  showInitView(true);
+  document.getElementById('init-text').textContent =
+    `Chargement de ${DATA_URL}...`;
+  updateProgress(null);
+
+  try {
+    const res = await fetch(DATA_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.monsters || !data.items) throw new Error('Format de données invalide');
+
+    DB = { monsters: data.monsters, items: data.items };
+    saveToCache();
+    showInitView(false);
+    switchTab(state.tab, true);
+  } catch (e) {
+    showInitView(false);
+    // Si le fichier distant échoue mais qu'on a un cache local, on l'utilise.
+    if (loadFromCache()) {
+      switchTab(state.tab, true);
+      return;
+    }
+    showError(
+      `Impossible de charger "${DATA_URL}" (${e.message}). ` +
+      `Vérifie que ce fichier est bien présent dans le même dossier que cette page sur GitHub, ` +
+      `et que tu l'as généré avec scanner.html.`
+    );
+  }
 }
 
-function updateProgress(done, total) {
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-label').textContent = `${done} / ${total} (${pct}%)`;
+function updateProgress(pct) {
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  if (pct == null) {
+    fill.style.width = '30%';
+    fill.style.animation = 'pulse 1s infinite alternate';
+    label.textContent = '';
+  } else {
+    fill.style.animation = 'none';
+    fill.style.width = pct + '%';
+    label.textContent = pct + '%';
+  }
 }
 
 function showInitView(show) {
@@ -758,13 +598,9 @@ function switchTab(tab, force) {
 
 function updateFooterNote() {
   const n = state.tab === 'monsters' ? DB.monsters.length : DB.items.length;
-  const totalRange = state.tab === 'monsters'
-    ? buildIdList(MONSTER_RANGES).length
-    : buildIdList(ITEM_RANGES).length;
   const label = state.tab === 'monsters' ? 'monstres' : 'items';
-  const complete = n >= totalRange ? '✓ complet' : `· "Sync" pour continuer`;
   document.getElementById('footer-note').textContent =
-    `📦 Base locale : ${n} ${label} indexés ${complete}`;
+    `📦 Base locale : ${n} ${label} chargés`;
 }
 
 function buildFilters() {
@@ -1341,12 +1177,9 @@ function clearSearch() {
   loadAdmin();
   document.getElementById('admin-btn').classList.toggle('on', ADMIN.enabled);
   buildFilters();
-  if (loadFromCache() && (DB.monsters.length > 0 || DB.items.length > 0)) {
-    // On a déjà des données en cache : on les affiche immédiatement.
-    switchTab('monsters', true);
-  } else {
-    await runIndexing();
-  }
+  // On essaie toujours de charger ro_data.json (peut avoir été mis à jour),
+  // avec repli automatique sur le cache local si le réseau échoue.
+  await loadData();
 })();
 </script>
 </body>
