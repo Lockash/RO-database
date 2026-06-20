@@ -170,6 +170,7 @@
     font-size: 12px; color: var(--rune-blue); padding: 0 16px 12px; text-align: center;
   }
   .respawn-summary span { display: inline-flex; align-items: center; gap: 4px; }
+  .zone-count-link { color: var(--gold) !important; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
   .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
   .detail-section { padding: 0 16px 20px; }
   .section-header {
@@ -796,7 +797,8 @@ function renderMonsterDetail(m) {
   const elEntries = Object.entries(ed).map(([k,v]) => ({k, v: Number(v)}))
     .sort((a,b) => b.v - a.v);
 
-  // Résumé respawn / quantité (sous le sprite)
+  // Résumé respawn / quantité (sous le sprite) — trié par qté décroissante
+  const sortedMaps = [...maps].sort((a, b) => (Number(b.amount)||0) - (Number(a.amount)||0));
   let respawnHtml = '';
   if (maps.length > 0) {
     const totalAmount = maps.reduce((sum, mp) => sum + (Number(mp.amount) || 0), 0);
@@ -804,7 +806,7 @@ function renderMonsterDetail(m) {
     respawnHtml = `<div class="respawn-summary">
       <span>👥 ${totalAmount} sur la${maps.length>1?'s':''} carte${maps.length>1?'s':''}</span>
       <span>⏱ Respawn ${freqs[0] || '?'}${freqs.length>1?` (+${freqs.length-1})`:''}</span>
-      ${maps.length>1?`<span>🗺 ${maps.length} zones</span>`:''}
+      ${maps.length>1?`<span class="zone-count-link" onclick="scrollToZones()">🗺 ${maps.length} zones ›</span>`:''}
     </div>`;
   }
 
@@ -898,12 +900,11 @@ function renderMonsterDetail(m) {
     </div>` : ''}
 
     ${maps.length ? `
-    <div class="detail-section">
+    <div class="detail-section" id="zones-section">
       <div class="section-header">
         <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
-        <button class="section-action" onclick='openWorldMap(${JSON.stringify(m.monster_info)}, ${JSON.stringify(maps)})'>🗺 Carte du monde</button>
       </div>
-      ${maps.map(mp => `<div class="map-row">
+      ${sortedMaps.map(mp => `<div class="map-row clickable" onclick='openZoneDetail(${JSON.stringify(mp.name)}, ${mp.number||0})'>
         <div class="map-thumb">
           ${mp.img?`<img src="${mp.img}" loading="lazy" onerror="this.parentElement.textContent='🗺'">`:'🗺'}
         </div>
@@ -912,6 +913,7 @@ function renderMonsterDetail(m) {
           <div class="map-meta">👥 ${mp.amount} monstres · ⏱ ${mp.frequency}</div>
         </div>
         <div class="map-type-badge">${mp.type}</div>
+        <span class="chevron" style="margin-left:4px">›</span>
       </div>`).join('')}
     </div>` : ''}
 
@@ -924,73 +926,116 @@ function renderMonsterDetail(m) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// WORLD MAP (vue simplifiée par région)
+// ZONE DETAIL — tous les monstres présents sur une carte donnée, triés par
+// quantité décroissante, avec indications de région/warps.
 // ════════════════════════════════════════════════════════════════════════════
-// Catégorise un nom de map RO dans une grande région du monde (géographie
-// factuelle du jeu : Rune-Midgarts au sud, Schwartzvald au nord-est,
-// Arunafeltz au nord-ouest, + zones spéciales/donjons).
-function mapRegion(name) {
+
+// Indications factuelles de région + warps approximatifs par préfixe de carte
+// (géographie connue de Ragnarok Online pré-renewal).
+const ZONE_INFO = [
+  { prefixes: ['prt_'], region: 'Rune-Midgarts — Prontera', warp: 'Capitale centrale. Kafra à Prontera pour voyager partout.' },
+  { prefixes: ['pay_'], region: 'Rune-Midgarts — Payon', warp: 'Forêt à l\'est de Prontera. Kafra à Payon.' },
+  { prefixes: ['mjo_'], region: 'Rune-Midgarts — Mjolnir', warp: 'Zone montagneuse au nord, accessible depuis Prontera/Geffen.' },
+  { prefixes: ['gef_'], region: 'Rune-Midgarts — Geffen', warp: 'Ville des magiciens, au nord-ouest de Prontera.' },
+  { prefixes: ['alb_'], region: 'Rune-Midgarts — Alberta', warp: 'Port au sud-est, Kafra à Alberta.' },
+  { prefixes: ['mor_'], region: 'Rune-Midgarts — Morroc', warp: 'Désert au sud-ouest, Kafra à Morroc.' },
+  { prefixes: ['comodo'], region: 'Rune-Midgarts — Comodo', warp: 'Ville côtière à l\'ouest, Kafra à Comodo.' },
+  { prefixes: ['umbala'], region: 'Rune-Midgarts — Umbala', warp: 'Village isolé, accessible par Payon ou bateau.' },
+  { prefixes: ['ayo'], region: 'Rune-Midgarts — Ayothaya', warp: 'Ville asiatique, accessible par bateau depuis Alberta.' },
+  { prefixes: ['amatsu'], region: 'Rune-Midgarts — Amatsu', warp: 'Village japonais, accessible par bateau.' },
+  { prefixes: ['lou_'], region: 'Rune-Midgarts — Louyang', warp: 'Ville chinoise, accessible par bateau.' },
+  { prefixes: ['xmas'], region: 'Rune-Midgarts — Lutie', warp: 'Village enneigé au nord-est de Payon.' },
+  { prefixes: ['ra_', 'man_'], region: 'Arunafeltz — Rachel', warp: 'Capitale d\'Arunafeltz, au nord-ouest. Kafra à Rachel.' },
+  { prefixes: ['lhz_'], region: 'Arunafeltz — Brasilis / Lighthalzen', warp: 'Ville industrielle, accessible depuis Einbroch ou Rachel.' },
+  { prefixes: ['dic_'], region: 'Arunafeltz — Dicastes', warp: 'Cité elfique au nord-ouest.' },
+  { prefixes: ['abbey'], region: 'Arunafeltz — Abbaye en ruines', warp: 'Donjon religieux près de Rachel.' },
+  { prefixes: ['yuno'], region: 'Schwartzvald — Juno', warp: 'Capitale magique au nord-est. Kafra à Juno.' },
+  { prefixes: ['kh_'], region: 'Schwartzvald — Kiehl1', warp: 'Académie de magie de Juno.' },
+  { prefixes: ['thana'], region: 'Schwartzvald — Thanatos Tower', warp: 'Donjon de fin de jeu, accessible depuis Juno.' },
+  { prefixes: ['nyd_'], region: 'Schwartzvald — Nidhoggur', warp: 'Donjon de fin de jeu, accessible depuis Juno.' },
+  { prefixes: ['jupe_'], region: 'Donjon — Juperos', warp: 'Ruines anciennes, accessible via Comodo/quête.' },
+  { prefixes: ['niflheim'], region: 'Donjon — Niflheim', warp: 'Royaume des morts, accessible depuis Glast Heim ou Yuno.' },
+  { prefixes: ['gl_'], region: 'Donjon — Glast Heim', warp: 'Château hanté, accessible depuis Geffen.' },
+  { prefixes: ['moc_'], region: 'Rune-Midgarts — Désert de Morroc', warp: 'Champs/pyramides au sud-ouest de Morroc.' },
+  { prefixes: ['iz_'], region: 'Rune-Midgarts — Izlude', warp: 'Académie de débutants, sud-est de Prontera.' },
+  { prefixes: ['que_'], region: 'Zone de quête', warp: 'Carte liée à une quête spécifique.' },
+];
+
+function zoneInfo(name) {
   const n = (name || '').toLowerCase();
-  const regions = [
-    { key: 'arunafeltz', label: 'Arunafeltz States (nord-ouest)',
-      desc: 'Capitale : Rachel. Régions enneigées du nord-ouest.',
-      prefixes: ['ra_', 'man_', 'lhz_', 'dic_', 'mid_camp', 'abbey'] },
-    { key: 'schwartzvald', label: 'République de Schwartzvald (nord-est)',
-      desc: 'Capitale : Juno (Yuno). Tours et académies magiques.',
-      prefixes: ['yuno', 'kh_', 'thana', 'nyd_', 'gefenia'] },
-    { key: 'donjons', label: 'Donjons de fin de jeu',
-      desc: 'Juperos, Thanatos Tower, Nidhoggur, Niflheim, Glast Heim profond...',
-      prefixes: ['jupe_', 'niflheim', 'gl_', 'abyss', 'beach_dun'] },
-    { key: 'rune-midgarts', label: 'Royaume de Rune-Midgarts (sud)',
-      desc: 'Capitale : Prontera. La plus grande région, climats variés.',
-      prefixes: ['prt_', 'pay_', 'mjo_', 'gef_', 'alb_', 'mor_', 'comodo',
-                  'umbala', 'ayo', 'amatsu', 'lou_', 'xmas', 'que_', 'iz_',
-                  'in_', 'sec_', 'tur_', 'mosk', 'spl_'] },
-  ];
-  for (const r of regions) {
-    if (r.prefixes.some(p => n.startsWith(p))) return r;
+  for (const z of ZONE_INFO) {
+    if (z.prefixes.some(p => n.startsWith(p))) return z;
   }
-  return { key: 'autre', label: 'Autres zones', desc: 'Îles, zones spéciales ou instances.', prefixes: [] };
+  return { region: 'Région non répertoriée', warp: 'Vérifie le nom de la carte sur un wiki RO pour les warps exacts.' };
 }
 
-function openWorldMap(monsterName, mapEntries) {
+function scrollToZones() {
+  const el = document.getElementById('zones-section');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openZoneDetail(mapName, mapNumber) {
   if (state.currentView) state.navStack.push(state.currentView);
-  state.currentView = { type: 'worldmap' };
+  state.currentView = { type: 'zone', mapName, mapNumber };
   showDetail();
-  renderWorldMap(monsterName, mapEntries);
+  renderZoneDetail(mapName, mapNumber);
 }
 
-function renderWorldMap(monsterName, mapEntries) {
-  const dv = document.getElementById('detail-view');
-
-  // Regroupe les zones de spawn par région
-  const byRegion = {};
-  for (const mp of mapEntries) {
-    const r = mapRegion(mp.name);
-    if (!byRegion[r.key]) byRegion[r.key] = { ...r, maps: [] };
-    byRegion[r.key].maps.push(mp);
+function renderZoneDetail(mapName, mapNumber) {
+  // Cherche tous les monstres qui ont cette carte exacte dans leurs spawns
+  const monstersHere = [];
+  for (const m of DB.monsters) {
+    const match = (m.maps || []).find(mp => mp.name === mapName && (mp.number || 0) === (mapNumber || 0));
+    if (match) monstersHere.push({ monster: m, spawn: match });
   }
-  const regionKeys = Object.keys(byRegion);
+  // Tri par quantité décroissante (le plus de monstres en premier)
+  monstersHere.sort((a, b) => (Number(b.spawn.amount)||0) - (Number(a.spawn.amount)||0));
 
+  const info = zoneInfo(mapName);
+  const sampleImg = monstersHere[0]?.spawn?.img;
+  const totalMonsters = monstersHere.reduce((sum, x) => sum + (Number(x.spawn.amount)||0), 0);
+
+  const dv = document.getElementById('detail-view');
   dv.innerHTML = `
     <button id="back-btn" onclick="goBack()">← Retour</button>
+
     <div class="detail-hero">
-      <div style="font-size:40px">🗺</div>
-      <div class="detail-name">CARTE DU MONDE</div>
-      <div class="detail-id">Zones de spawn — ${displayName(monsterName)}</div>
-    </div>
-    <div class="detail-section">
-      ${regionKeys.map(key => {
-        const r = byRegion[key];
-        return `<div class="region-box">
-          <div class="region-title">📍 ${r.label}</div>
-          <div class="region-desc">${r.desc}</div>
-          <div>${r.maps.map(mp => `<span class="map-chip highlight">${displayName(mp.name)}${mp.number?' '+mp.number:''}</span>`).join('')}</div>
-        </div>`;
-      }).join('')}
-      <div class="empty-msg" style="padding:16px 0 0">
-        ℹ️ Vue simplifiée par région (pas de carte image — données factuelles uniquement).
+      <div class="map-thumb" style="width:90px;height:90px;margin:0 auto">
+        ${sampleImg?`<img src="${sampleImg}" onerror="this.parentElement.textContent='🗺'">`:'🗺'}
       </div>
+      <div class="detail-name">${displayName(mapName)}${mapNumber?' '+mapNumber:''}</div>
+      <div class="detail-id">${monstersHere.length} espèce${monstersHere.length>1?'s':''} · ${totalMonsters} monstres au total</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="region-box">
+        <div class="region-title">📍 ${info.region}</div>
+        <div class="region-desc">🧭 ${info.warp}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Monstres sur cette carte</div></div></div>
+      ${monstersHere.length === 0 ? `<div class="empty-msg">Aucun autre monstre trouvé pour cette carte dans la base.</div>` :
+        monstersHere.map(({monster: m2, spawn}) => {
+          const el2 = m2.type || 'neutral';
+          const c2 = elColor(el2);
+          const mvp2 = isMvp(m2);
+          return `<div class="monster-card" onclick="openMonsterDetail(${m2.monster_id})">
+            <div class="sprite-box">
+              ${m2.gif?`<img src="${m2.gif}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">`:'🐾'}
+            </div>
+            <div class="card-info">
+              <div class="card-name">${displayName(m2.monster_info)}${mvp2?' ★':''}</div>
+              <div class="card-sub">👥 ${spawn.amount} · ⏱ ${spawn.frequency}</div>
+              <div class="card-chips">
+                <span class="chip" style="color:${c2};border-color:${c2}44;background:${c2}18">${EL_ICON[el2]||''} ${elFr(el2)}</span>
+              </div>
+            </div>
+            <svg class="chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+          </div>`;
+        }).join('')
+      }
     </div>
   `;
 }
@@ -1072,6 +1117,10 @@ function goBack() {
     } else if (prev.type === 'item') {
       const it = DB.items.find(x => x.item_id === prev.id);
       if (it) renderItemDetail(it); else goBack();
+    } else if (prev.type === 'zone') {
+      renderZoneDetail(prev.mapName, prev.mapNumber);
+    } else if (prev.type === 'admin') {
+      renderAdminPanel();
     } else {
       showList();
     }
@@ -1161,7 +1210,15 @@ document.getElementById('search-input').addEventListener('input', function() {
   state.query = this.value;
   document.getElementById('clear-btn').style.display = this.value ? 'block' : 'none';
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(applyFilter, 200);
+  searchTimer = setTimeout(() => {
+    // Si on tape une recherche depuis l'écran de détail, on revient à la liste.
+    if (state.inDetail) {
+      state.currentView = null;
+      state.navStack = [];
+      showList();
+    }
+    applyFilter();
+  }, 200);
 });
 function clearSearch() {
   document.getElementById('search-input').value = '';
@@ -1178,7 +1235,7 @@ function clearSearch() {
   document.getElementById('admin-btn').classList.toggle('on', ADMIN.enabled);
   buildFilters();
   // On essaie toujours de charger ro_data.json (peut avoir été mis à jour),
-  // avec repli automatique sur le cache local si le réseau échoue 1.
+  // avec repli automatique sur le cache local si le réseau échoue.
   await loadData();
 })();
 </script>
