@@ -456,7 +456,10 @@ function saveAdmin() {
   try { localStorage.setItem(ADMIN_KEY, JSON.stringify(ADMIN)); } catch (e) {}
 }
 function isMvp(m) {
-  return !!(m.skills?.mode || []).includes('mvp');
+  // Format rAthena (actuel) : m.modes est un tableau plat.
+  // Format RagnaAPI (legacy) : m.skills.mode.
+  const modes = m.modes || m.skills?.mode || [];
+  return modes.includes('mvp');
 }
 function adjustedRate(monster, rate) {
   const mult = isMvp(monster) ? ADMIN.mvpRateMult : ADMIN.globalRateMult;
@@ -780,7 +783,7 @@ function statRow(label, val, color, last=false) {
 // Cherche un item correspondant à un nom de drop (même format snake_case que l'API)
 function findItemByName(name) {
   if (!name) return null;
-  return DB.items.find(i => i.name === name) || null;
+  return DB.items.find(i => i.aegis_name === name || i.name === name) || null;
 }
 
 function renderMonsterDetail(m) {
@@ -791,7 +794,7 @@ function renderMonsterDetail(m) {
   const ed = m.elementalDamage || {};
   const drops = [...(m.drops || [])].sort((a,b) => b.rate - a.rate);
   const maps = m.maps || [];
-  const modes = m.skills?.mode || [];
+  const modes = m.modes || m.skills?.mode || [];
   const mvp = isMvp(m);
 
   const elEntries = Object.entries(ed).map(([k,v]) => ({k, v: Number(v)}))
@@ -880,8 +883,8 @@ function renderMonsterDetail(m) {
         const fmt = (v) => v>=1 ? v.toFixed(2)+'%' : v.toFixed(3)+'%';
         const matchedItem = findItemByName(d.name);
         const clickable = matchedItem ? 'clickable' : '';
-        const onclick = matchedItem ? `onclick="openItemDetail(${matchedItem.item_id})"` : '';
-        return `<div class="drop-row ${clickable}" ${onclick}>
+        const dataAttr = matchedItem ? `data-item-id="${matchedItem.item_id}"` : '';
+        return `<div class="drop-row ${clickable}" ${dataAttr}>
           <div class="drop-icon-box">
             ${d.img?`<img src="${d.img}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">`:'📦'}
           </div>
@@ -989,7 +992,14 @@ function renderZoneDetail(mapName, mapNumber) {
     if (match) monstersHere.push({ monster: m, spawn: match });
   }
   // Tri par quantité décroissante (le plus de monstres en premier)
-  monstersHere.sort((a, b) => (Number(b.spawn.amount)||0) - (Number(a.spawn.amount)||0));
+  // Tri : MVP/mini-boss (Class:Boss) en premier, puis par quantité décroissante
+  // au sein de chaque groupe (le plus nombreux d'abord).
+  monstersHere.sort((a, b) => {
+    const aBoss = isMvp(a.monster) || (a.monster.modes||[]).includes('boss') ? 1 : 0;
+    const bBoss = isMvp(b.monster) || (b.monster.modes||[]).includes('boss') ? 1 : 0;
+    if (aBoss !== bBoss) return bBoss - aBoss; // boss/MVP d'abord
+    return (Number(b.spawn.amount)||0) - (Number(a.spawn.amount)||0);
+  });
 
   const info = zoneInfo(mapName);
   const sampleImg = monstersHere[0]?.spawn?.img;
@@ -1201,6 +1211,20 @@ function updateAdminValue(key, value) {
   ADMIN[key] = isNaN(v) || v < 0 ? 1 : v;
   saveAdmin();
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// EVENT DELEGATION — clic sur les drops (équipements, cartes, usables...)
+// Utilise data-item-id plutôt que des onclick inline, pour être totalement
+// robuste face aux caractères spéciaux (apostrophes, guillemets) dans les
+// noms d'objets qui pourraient casser un attribut HTML généré dynamiquement.
+// ════════════════════════════════════════════════════════════════════════════
+document.getElementById('detail-view').addEventListener('click', (e) => {
+  const row = e.target.closest('[data-item-id]');
+  if (row) {
+    const id = parseInt(row.getAttribute('data-item-id'), 10);
+    if (!isNaN(id)) openItemDetail(id);
+  }
+});
 
 // ════════════════════════════════════════════════════════════════════════════
 // SEARCH
