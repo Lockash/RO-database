@@ -501,6 +501,86 @@ function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
 function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
 function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
+// ── Script bonus translator (English) ────────────────────────────────────────
+const STAT_EN = {
+  bStr:'STR', bAgi:'AGI', bVit:'VIT', bInt:'INT', bDex:'DEX', bLuk:'LUK',
+  bAllStats:'All Stats',
+  bMaxHP:'Max HP', bMaxSP:'Max SP', bMaxHPrate:'Max HP', bMaxSPrate:'Max SP',
+  bAtk:'ATK', bAtk2:'ATK', bMatk:'MATK', bMatkRate:'MATK',
+  bHit:'HIT', bHitRate:'HIT', bFlee:'FLEE', bFlee2:'Perfect Dodge',
+  bCritical:'CRIT', bAspd:'ASPD', bAspdRate:'ASPD',
+  bDef:'DEF', bDef2:'DEF', bMdef:'MDEF', bMdef2:'MDEF',
+  bSpeed:'Move Speed', bCastrate:'Cast Time', bDelayrate:'After-cast Delay',
+  bHPrecovRate:'HP Recovery', bSPrecovRate:'SP Recovery',
+  bAddItemHealRate:'Potion Heal',
+  bUnbreakableWeapon:'Unbreakable Weapon', bUnbreakableArmor:'Unbreakable Armor',
+  bUnbreakableHelm:'Unbreakable Helm', bUnbreakableGarment:'Unbreakable Garment',
+  bUnbreakableShield:'Unbreakable Shield', bUnbreakableShoes:'Unbreakable Shoes',
+  bNoCastCancel:'Uninterruptible Cast',
+  bDoubleRate:'Double Attack Chance',
+  bAddRace:'Damage vs', bSubRace:'Damage Reduction vs',
+  bAddSize:'Damage vs Size', bSubSize:'Damage Reduction vs Size',
+  bAddEff:'Chance to inflict', bResEff:'Resistance to',
+  bIgnoreDefRace:'Ignore DEF of', bIgnoreMdefRace:'Ignore MDEF of',
+  bShortWeaponDamageReturn:'Reflect Melee Damage',
+  bLongWeaponDamageReturn:'Reflect Ranged Damage',
+};
+const RACE_EN = {
+  RC_DemiHuman:'Demi-Human', RC_Undead:'Undead', RC_Brute:'Brute',
+  RC_Plant:'Plant', RC_Insect:'Insect', RC_Fish:'Fish',
+  RC_Demon:'Demon', RC_Dragon:'Dragon', RC_Angel:'Angel',
+  RC_Boss:'Boss', RC_NonBoss:'Non-Boss', RC_All:'All Races',
+};
+const ELE_EN = {
+  Ele_Neutral:'Neutral', Ele_Water:'Water', Ele_Earth:'Earth', Ele_Fire:'Fire',
+  Ele_Wind:'Wind', Ele_Poison:'Poison', Ele_Holy:'Holy', Ele_Dark:'Shadow',
+  Ele_Ghost:'Ghost', Ele_Undead:'Undead',
+};
+
+function translateScriptEn(script) {
+  if (!script) return null;
+  const parts = script.split(';').map(s => s.trim()).filter(Boolean);
+  const lines = [];
+  for (const part of parts) {
+    // bonus bStat,value
+    const m1 = part.match(/^bonus\s+(\w+)\s*,\s*(-?\d+)$/);
+    // bonus2 bStat,Race/Ele,value
+    const m2 = part.match(/^bonus2\s+(\w+)\s*,\s*(\w+)\s*,\s*(-?\d+)$/);
+    // bonus bUnbreakableX (no value)
+    const m0 = part.match(/^bonus\s+(bUnbreakable\w+)$/);
+
+    if (m0) {
+      const label = STAT_EN[m0[1]];
+      if (label) { lines.push(label); continue; }
+    }
+    if (m1) {
+      const [, stat, val] = m1;
+      const label = STAT_EN[stat];
+      if (label) {
+        const v = parseInt(val, 10);
+        const sign = v >= 0 ? '+' : '';
+        const isPct = /rate$/i.test(stat);
+        lines.push(`${sign}${v}${isPct ? '%' : ''} ${label}`);
+        continue;
+      }
+    }
+    if (m2) {
+      const [, stat, arg, val] = m2;
+      const label = STAT_EN[stat];
+      const argLabel = RACE_EN[arg] || ELE_EN[arg] || arg;
+      if (label) {
+        const v = parseInt(val, 10);
+        const sign = v >= 0 ? '+' : '';
+        lines.push(`${sign}${v}% ${label} ${argLabel}`);
+        continue;
+      }
+    }
+    // Not translated — show as-is (compact form)
+    lines.push(part);
+  }
+  return lines.join(' | ');
+}
+
 // La source rAthena ne fournit pas d'images -> on retombe sur le pattern
 // standard utilisé par les wikis RO (db.irowiki.org), basé sur l'ID.
 // Si l'image n'existe pas à cette adresse, le onerror du <img> bascule
@@ -568,13 +648,14 @@ async function loadData() {
     if (!data.monsters || !data.items) throw new Error('Format de données invalide');
 
     DB = { monsters: data.monsters, items: data.items };
+    indexDuplicateMonsters();
     saveToCache();
     showInitView(false);
     switchTab(state.tab, true);
   } catch (e) {
     showInitView(false);
-    // Si le fichier distant échoue mais qu'on a un cache local, on l'utilise.
     if (loadFromCache()) {
+      indexDuplicateMonsters();
       switchTab(state.tab, true);
       return;
     }
@@ -583,6 +664,23 @@ async function loadData() {
       `Vérifie que ce fichier est bien présent dans le même dossier que cette page sur GitHub, ` +
       `et que tu l'as généré avec scanner.html.`
     );
+  }
+}
+
+// Pour chaque monstre qui partage son nom avec un autre, on lui attribue
+// un index de variante (1, 2, 3...) basé sur l'ordre croissant des IDs.
+// Affichage : "Poring", "Poring (v2)", "Poring (v3)" etc.
+function indexDuplicateMonsters() {
+  const nameGroups = {};
+  for (const m of DB.monsters) {
+    const key = m.monster_info;
+    if (!nameGroups[key]) nameGroups[key] = [];
+    nameGroups[key].push(m);
+  }
+  for (const group of Object.values(nameGroups)) {
+    if (group.length < 2) { group[0]._variantIdx = 0; continue; }
+    group.sort((a, b) => a.monster_id - b.monster_id);
+    group.forEach((m, i) => { m._variantIdx = i + 1; });
   }
 }
 
@@ -737,6 +835,7 @@ function renderList() {
 function buildMonsterCard(m) {
   const id = m.monster_id;
   const name = displayName(m.monster_info);
+  const variantSuffix = m._variantIdx > 1 ? ` <span style="color:var(--text-muted);font-size:10px">(v${m._variantIdx})</span>` : '';
   const el = m.type || 'neutral';
   const color = elColor(el);
   const div = document.createElement('div');
@@ -746,7 +845,7 @@ function buildMonsterCard(m) {
       ${monsterImgUrl(m) ? `<img src="${monsterImgUrl(m)}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">` : '🐾'}
     </div>
     <div class="card-info">
-      <div class="card-name">${name}</div>
+      <div class="card-name">${name}${variantSuffix}</div>
       <div class="card-sub">ID: ${id} · Lv.${m.main_stats?.level || '?'}</div>
       <div class="card-chips">
         <span class="chip" style="color:${color};border-color:${color}44;background:${color}18">
@@ -846,7 +945,7 @@ function renderMonsterDetail(m) {
     <div class="detail-hero" style="--el-color:${elColor_}">
       <div class="detail-hero-bg"></div>
       ${monsterImgUrl(m) ? `<img class="detail-sprite" src="${monsterImgUrl(m)}" alt="${name}" onerror="this.style.display='none'">` : '<div style="height:80px;display:flex;align-items:center;font-size:48px">🐾</div>'}
-      <div class="detail-name">${name}</div>
+      <div class="detail-name">${name}${m._variantIdx > 1 ? ` (v${m._variantIdx})` : ''}</div>
       <div class="detail-id">ID : ${m.monster_id}</div>
     </div>
     ${respawnHtml}
@@ -1156,7 +1255,7 @@ function renderItemDetail(item) {
     </div>
     ${item.description?`<div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Description</div></div></div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--text-2);line-height:1.6;font-family:monospace;word-break:break-word">${item.description}</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text-2);line-height:1.6">${translateScriptEn(item.description) || item.description}</div>
     </div>`:''}
     ${equipHtml}
     <div class="detail-section">
@@ -1333,7 +1432,7 @@ function clearSearch() {
   document.getElementById('admin-btn').classList.toggle('on', ADMIN.enabled);
   buildFilters();
   // On essaie toujours de charger ro_data.json (peut avoir été mis à jour),
-  // avec repli automatique sur le cache local si le réseau échoue.
+  // avec repli automatique sur le cache local si le réseau échoue xXx.
   await loadData();
 })();
 </script>
