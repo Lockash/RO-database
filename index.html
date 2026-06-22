@@ -149,33 +149,38 @@
   }
   .detail-hero {
     display: flex; flex-direction: column; align-items: center;
-    padding: 16px; position: relative;
+    padding: 10px 16px 8px; position: relative;
   }
   .detail-hero-bg {
     position: absolute; inset: 0; opacity: .06;
     background: radial-gradient(circle at center, var(--el-color, var(--gold)) 0%, transparent 70%);
   }
   .detail-sprite {
-    image-rendering: pixelated; max-height: 110px; max-width: 150px;
+    image-rendering: pixelated; max-height: 64px; max-width: 90px;
     position: relative; z-index: 1;
   }
   .detail-name {
-    font-family: 'Press Start 2P', monospace; font-size: 10px;
-    color: var(--gold); margin-top: 10px; text-align: center;
-    line-height: 1.6; position: relative; z-index: 1;
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    color: var(--gold); margin-top: 6px; text-align: center;
+    line-height: 1.5; position: relative; z-index: 1;
   }
-  .detail-id { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .detail-id { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
   .respawn-summary {
     display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
-    font-size: 12px; color: var(--rune-blue); padding: 0 16px 12px; text-align: center;
+    font-size: 11px; color: var(--rune-blue); padding: 0 16px 8px; text-align: center;
   }
   .respawn-summary span { display: inline-flex; align-items: center; gap: 4px; }
   .zone-count-link { color: var(--gold) !important; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-  .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
-  .detail-section { padding: 0 16px 20px; }
+  .zones-empty-collapsed {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; cursor: pointer;
+  }
+  .detail-badges { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 16px 10px; }
+  .detail-section { padding: 0 16px 12px; }
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
   }
   .section-header-left { display: flex; align-items: center; gap: 7px; }
   .section-bar { width: 3px; height: 14px; background: var(--gold); border-radius: 2px; }
@@ -246,11 +251,11 @@
   }
   .stat-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 9px 14px; border-bottom: 1px solid var(--divider);
+    padding: 6px 14px; border-bottom: 1px solid var(--divider);
   }
   .stat-row:last-child { border-bottom: none; }
-  .stat-label { font-size: 13px; color: var(--text-2); }
-  .stat-value { font-size: 13px; font-weight: 600; color: var(--text-1); text-align: right; }
+  .stat-label { font-size: 12px; color: var(--text-2); }
+  .stat-value { font-size: 12px; font-weight: 600; color: var(--text-1); text-align: right; }
 
   /* Attr grid */
   .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -495,6 +500,27 @@ function raceColor(r){ return RACE_COLOR[r?.toLowerCase()] || '#8888AA'; }
 function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
 function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
 function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+
+// La source rAthena ne fournit pas d'images -> on retombe sur le pattern
+// standard utilisé par les wikis RO (db.irowiki.org), basé sur l'ID.
+// Si l'image n'existe pas à cette adresse, le onerror du <img> bascule
+// proprement sur l'emoji de repli (géré au niveau de l'affichage).
+function monsterImgUrl(monster) {
+  if (monster.gif) return monster.gif;
+  if (!monster.monster_id) return null;
+  return `https://db.irowiki.org/image/monster/${monster.monster_id}.png`;
+}
+function itemImgUrl(item) {
+  if (item.img) return item.img;
+  if (!item.item_id) return null;
+  return `https://db.irowiki.org/image/item/${item.item_id}.png`;
+}
+function dropImgUrl(drop) {
+  if (drop.img) return drop.img;
+  const matched = findItemByName(drop.name);
+  if (matched) return itemImgUrl(matched);
+  return null;
+}
 function modesFr(m) {
   const map = { aggressive:'Agressif', changes_target_if_attacked:'Change de cible si attaqué',
     assists:'Appelle des alliés', cast_sensor_idle:'Détecte les sorts',
@@ -717,7 +743,7 @@ function buildMonsterCard(m) {
   div.className = 'monster-card';
   div.innerHTML = `
     <div class="sprite-box">
-      ${m.gif ? `<img src="${m.gif}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">` : '🐾'}
+      ${monsterImgUrl(m) ? `<img src="${monsterImgUrl(m)}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">` : '🐾'}
     </div>
     <div class="card-info">
       <div class="card-name">${name}</div>
@@ -744,7 +770,7 @@ function buildItemCard(item) {
   div.className = 'monster-card';
   div.innerHTML = `
     <div class="sprite-box">
-      ${item.img ? `<img src="${item.img}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">` : '📦'}
+      ${itemImgUrl(item) ? `<img src="${itemImgUrl(item)}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">` : '📦'}
     </div>
     <div class="card-info">
       <div class="card-name">${name}</div>
@@ -819,7 +845,7 @@ function renderMonsterDetail(m) {
 
     <div class="detail-hero" style="--el-color:${elColor_}">
       <div class="detail-hero-bg"></div>
-      ${m.gif ? `<img class="detail-sprite" src="${m.gif}" alt="${name}" onerror="this.style.display='none'">` : '<div style="height:80px;display:flex;align-items:center;font-size:48px">🐾</div>'}
+      ${monsterImgUrl(m) ? `<img class="detail-sprite" src="${monsterImgUrl(m)}" alt="${name}" onerror="this.style.display='none'">` : '<div style="height:80px;display:flex;align-items:center;font-size:48px">🐾</div>'}
       <div class="detail-name">${name}</div>
       <div class="detail-id">ID : ${m.monster_id}</div>
     </div>
@@ -886,7 +912,7 @@ function renderMonsterDetail(m) {
         const dataAttr = matchedItem ? `data-item-id="${matchedItem.item_id}"` : '';
         return `<div class="drop-row ${clickable}" ${dataAttr}>
           <div class="drop-icon-box">
-            ${d.img?`<img src="${d.img}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">`:'📦'}
+            ${dropImgUrl(d)?`<img src="${dropImgUrl(d)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">`:'📦'}
           </div>
           <div class="drop-info">
             <div class="drop-name">${displayName(d.name)}${matchedItem?' <span style="color:var(--text-muted)">›</span>':''}</div>
@@ -918,7 +944,19 @@ function renderMonsterDetail(m) {
         <div class="map-type-badge">${mp.type}</div>
         <span class="chevron" style="margin-left:4px">›</span>
       </div>`).join('')}
-    </div>` : ''}
+    </div>` : `
+    <div class="detail-section" id="zones-section">
+      <div class="section-header">
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
+      </div>
+      <div class="zones-empty-collapsed" id="zones-empty-toggle" onclick="toggleEmptyZones()">
+        <span style="color:var(--text-muted);font-size:12px">Non disponibles pour cette source de données</span>
+        <span class="chevron" style="color:var(--text-muted)">▾</span>
+      </div>
+      <div class="empty-msg" id="zones-empty-detail" style="display:none">
+        Les zones de spawn ne sont pas fournies par la base rAthena (mob_db.yml ne contient que stats/drops, pas les emplacements de map). Cette information viendra d'une source complémentaire plus tard.
+      </div>
+    </div>`}
 
     ${modes.length ? `
     <div class="detail-section">
@@ -926,6 +964,14 @@ function renderMonsterDetail(m) {
       <div>${modes.map(m=>`<span class="mode-chip">${modesFr(m)}</span>`).join('')}</div>
     </div>` : ''}
   `;
+}
+
+function toggleEmptyZones() {
+  const detail = document.getElementById('zones-empty-detail');
+  const toggle = document.getElementById('zones-empty-toggle');
+  const isHidden = detail.style.display === 'none';
+  detail.style.display = isHidden ? 'block' : 'none';
+  toggle.querySelector('.chevron').textContent = isHidden ? '▴' : '▾';
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1069,24 +1115,52 @@ function renderItemDetail(item) {
   const bonus = item.bonus || {};
   const bonusEntries = Object.entries(bonus);
   const dv = document.getElementById('detail-view');
+
+  // Section équipement (armes/armures/garments/boots/shields/accessories)
+  // Affichée uniquement si l'item est un équipement. Infos laissées en
+  // anglais (noms techniques rAthena), traduction FR à ajouter plus tard.
+  let equipHtml = '';
+  if (item.is_equip) {
+    const locs = (item.locations || []).join(', ') || '—';
+    const jobs = (item.jobs || []).join(', ') || '—';
+    const classes = (item.classes || []).join(', ') || '—';
+    equipHtml = `<div class="detail-section">
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Equipment</div></div></div>
+      <div class="stats-card">
+        ${statRow('Slot', locs)}
+        ${item.defense!=null?statRow('Defense', item.defense):''}
+        ${item.attack!=null?statRow('Attack', item.attack):''}
+        ${item.weapon_range!=null?statRow('Range', item.weapon_range):''}
+        ${item.weapon_level!=null?statRow('Weapon Level', item.weapon_level):''}
+        ${statRow('Slots', item.slots || 0)}
+        ${statRow('Refineable', item.refineable ? 'Yes' : 'No')}
+        ${item.gender?statRow('Gender', item.gender):''}
+        ${statRow('Jobs', jobs)}
+        ${statRow('Classes', classes, null, true)}
+      </div>
+    </div>`;
+  }
+
   dv.innerHTML = `
     <button id="back-btn" onclick="goBack()">← Retour</button>
     <div class="detail-hero">
       <div class="detail-hero-bg" style="--el-color:${color}"></div>
-      ${item.img?`<img class="detail-sprite" src="${item.img}" style="max-height:80px" onerror="this.style.display='none'">`:'<div style="font-size:48px;position:relative">📦</div>'}
+      ${itemImgUrl(item)?`<img class="detail-sprite" src="${itemImgUrl(item)}" style="max-height:80px" onerror="this.style.display='none'">`:'<div style="font-size:48px;position:relative">📦</div>'}
       <div class="detail-name">${name}</div>
       <div class="detail-id">ID : ${item.item_id}</div>
     </div>
     <div class="detail-badges">
       <span class="chip" style="color:${color};border-color:${color}55;background:${color}18">${typeFr(type)}</span>
       ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Nv. ${item.required_level}</span>`:''}
+      ${item.slots?`<span class="chip" style="color:var(--text-2);border-color:var(--border)">${item.slots} slot${item.slots>1?'s':''}</span>`:''}
     </div>
     ${item.description?`<div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Description</div></div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text-2);line-height:1.6">${item.description}</div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Description</div></div></div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--text-2);line-height:1.6;font-family:monospace;word-break:break-word">${item.description}</div>
     </div>`:''}
+    ${equipHtml}
     <div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Infos</div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Infos</div></div></div>
       <div class="stats-card">
         ${item.weight!=null?statRow('Poids', (item.weight/10)+' w'):''}
         ${item.buy_price!=null?statRow('Prix achat', item.buy_price+' z', '#F5A623'):''}
@@ -1095,7 +1169,7 @@ function renderItemDetail(item) {
       </div>
     </div>
     ${bonusEntries.length?`<div class="detail-section">
-      <div class="section-header"><div class="section-bar"></div><div class="section-title">Bonus</div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Bonus</div></div></div>
       <div class="stats-card">
         ${bonusEntries.map(([k,v],i)=>statRow(k, JSON.stringify(v),'#48C774', i===bonusEntries.length-1)).join('')}
       </div>
