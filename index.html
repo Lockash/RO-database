@@ -475,30 +475,53 @@ function adjustedRate(monster, rate) {
 // ════════════════════════════════════════════════════════════════════════════
 // HELPERS - traduction / couleurs
 // ════════════════════════════════════════════════════════════════════════════
-const EL_FR   = { fire:'Feu', water:'Eau', wind:'Vent', earth:'Terre', holy:'Sacré',
-                   shadow:'Ombre', poison:'Poison', undead:'Mort-vivant', ghost:'Fantôme', neutral:'Neutre' };
+const EL_FR   = { fire:'Fire', water:'Water', wind:'Wind', earth:'Earth', holy:'Holy',
+                   shadow:'Shadow', poison:'Poison', undead:'Undead', ghost:'Ghost', neutral:'Neutral' };
 const EL_COLOR= { fire:'#E84040', water:'#4096E8', wind:'#48C774', earth:'#A0804A',
                    holy:'#FFF08A', shadow:'#9B59B6', poison:'#2ECC71', undead:'#95A5A6',
                    ghost:'#7F8C8D', neutral:'#BDC3C7' };
 const EL_ICON = { fire:'🔥', water:'💧', wind:'🌀', earth:'🌿', holy:'✨',
                    shadow:'🌑', poison:'☠', undead:'💀', ghost:'👻', neutral:'⬜' };
-const RACE_FR  = { angel:'Ange', demihuman:'Demi-humain', 'demi-human':'Demi-humain',
-                    dragon:'Dragon', formless:'Sans forme', insect:'Insecte',
-                    plant:'Plante', undead:'Mort-vivant', brute:'Brute', fish:'Poisson' };
+const RACE_FR  = { angel:'Angel', demihuman:'Demi-Human', 'demi-human':'Demi-Human',
+                    dragon:'Dragon', formless:'Formless', insect:'Insect',
+                    plant:'Plant', undead:'Undead', brute:'Brute', fish:'Fish' };
 const RACE_COLOR={ angel:'#FFF08A', demihuman:'#E8A040', 'demi-human':'#E8A040',
                     dragon:'#E84040', formless:'#BDC3C7', insect:'#48C774',
                     plant:'#27AE60', undead:'#95A5A6', brute:'#A0804A', fish:'#4096E8' };
 const TYPE_COLOR={ weapon:'#E84040', armor:'#4A90D9', card:'#F5A623',
                     usable:'#48C774', etc:'#8888AA', ammo:'#BDC3C7' };
-const TYPE_FR  = { weapon:'Arme', armor:'Armure', card:'Carte',
-                    usable:'Consommable', etc:'Divers', ammo:'Munition' };
+const TYPE_FR  = { weapon:'Weapon', armor:'Armor', card:'Card',
+                    usable:'Usable', etc:'Misc', ammo:'Ammo' };
 
 function elColor(e){ return EL_COLOR[e?.toLowerCase()] || '#BDC3C7'; }
-function elFr(e)   { return EL_FR[e?.toLowerCase()] || e || 'Neutre'; }
+function elFr(e)   { return EL_FR[e?.toLowerCase()] || e || 'Neutral'; }
 function raceFr(r) { return RACE_FR[r?.toLowerCase()] || r; }
 function raceColor(r){ return RACE_COLOR[r?.toLowerCase()] || '#8888AA'; }
 function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
 function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
+
+// Readable slot name for cards and equipment
+// Cards: shows where the card goes (Armor, Weapon, Garment, Shoes, Headgear, Accessory, Shield)
+// Equipment: shows the broad category (Armor, Weapon, etc.)
+function slotReadable(locations) {
+  if (!locations || locations.length === 0) return '—';
+  const loc = locations[0];
+  const map = {
+    'Upper Headgear': 'Headgear', 'Middle Headgear': 'Headgear (Mid)',
+    'Lower Headgear': 'Headgear (Low)', 'Armor': 'Armor',
+    'Weapon': 'Weapon', 'Shield': 'Shield', 'Left_Hand': 'Shield',
+    'Garment': 'Garment', 'Shoes': 'Shoes',
+    'Right Accessory': 'Accessory', 'Left Accessory': 'Accessory',
+    'Accessory (Right)': 'Accessory', 'Accessory (Left)': 'Accessory',
+    'Two-Handed Weapon': 'Two-Hand Weapon',
+  };
+  return map[loc] || loc;
+}
+
+// Filter/label for element chips in topbar
+const EL_FILTER_LABELS = { fire:'🔥 Fire', water:'💧 Water', wind:'🌀 Wind',
+  earth:'🌿 Earth', holy:'✨ Holy', shadow:'🌑 Shadow', poison:'☠ Poison',
+  undead:'💀 Undead', ghost:'👻 Ghost', neutral:'⬜ Neutral' };
 function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
 // ── Script bonus translator (English) ────────────────────────────────────────
@@ -574,6 +597,14 @@ function translateScriptEn(script) {
         lines.push(`${sign}${v}% ${label} ${argLabel}`);
         continue;
       }
+      // Special case: bSubEle (elemental damage reduction)
+      if (stat === 'bSubEle') {
+        const eleLabel = ELE_EN[arg] || arg;
+        const v = parseInt(val, 10);
+        const sign = v >= 0 ? '+' : '';
+        lines.push(`${sign}${v}% Resist ${eleLabel}`);
+        continue;
+      }
     }
     // Not translated — show as-is (compact form)
     lines.push(part);
@@ -602,9 +633,13 @@ function dropImgUrl(drop) {
   return null;
 }
 function modesFr(m) {
-  const map = { aggressive:'Agressif', changes_target_if_attacked:'Change de cible si attaqué',
-    assists:'Appelle des alliés', cast_sensor_idle:'Détecte les sorts',
-    detector:'Détecteur', boss:'Boss', mvp:'MVP', looter:'Looteur', plant:'Immobile' };
+  const map = {
+    aggressive:'Aggressive', changes_target_if_attacked:'Changes Target',
+    assists:'Calls Allies', cast_sensor_idle:'Detects Spells',
+    detector:'Detector', boss:'Boss', mvp:'MVP', looter:'Looter',
+    plant:'Immobile', canmove:'Can Move', knockbackimmune:'Knockback Immune',
+    norandomwalk:'No Random Walk', nocast:'No Cast', fixeditemdrop:'Fixed Drop',
+  };
   return map[m] || displayName(m);
 }
 
@@ -940,11 +975,12 @@ function renderMonsterDetail(m) {
 
   const dv = document.getElementById('detail-view');
   dv.innerHTML = `
-    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <button id="back-btn" onclick="goBack()">← Back</button>
 
     <div class="detail-hero" style="--el-color:${elColor_}">
       <div class="detail-hero-bg"></div>
       ${monsterImgUrl(m) ? `<img class="detail-sprite" src="${monsterImgUrl(m)}" alt="${name}" onerror="this.style.display='none'">` : '<div style="height:80px;display:flex;align-items:center;font-size:48px">🐾</div>'}
+      ${mvp ? `<div style="font-size:10px;color:#FFF08A;font-family:'Press Start 2P',monospace;margin-top:4px;position:relative;z-index:1">★ MVP</div>` : (modes.includes('boss') ? `<div style="font-size:9px;color:#E8A040;font-family:'Press Start 2P',monospace;margin-top:4px;position:relative;z-index:1">⚡ Mini-Boss</div>` : '')}
       <div class="detail-name">${name}${m._variantIdx > 1 ? ` (v${m._variantIdx})` : ''}</div>
       <div class="detail-id">ID : ${m.monster_id}</div>
     </div>
@@ -955,31 +991,30 @@ function renderMonsterDetail(m) {
         ${EL_ICON[el]||''} ${elFr(el)} Lv.${m.element_power||1}
       </span>
       ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}55;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
-      ${m.size ? `<span class="chip" style="color:var(--text-2);border-color:var(--border)">${{small:'Petit',medium:'Moyen',large:'Grand'}[m.size]||m.size}</span>` : ''}
-      ${mvp ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A55;background:#FFF08A18">★ MVP</span>` : ''}
+      ${m.size ? `<span class="chip" style="color:var(--text-2);border-color:var(--border)">${{small:'Small',medium:'Medium',large:'Large'}[m.size]||m.size}</span>` : ''}
     </div>
 
     <div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Stats</div></div></div>
       <div class="stats-card">
         ${statRow('HP', s.hp, '#E84040')}
-        ${statRow('Niveau', s.level, '#F5A623')}
-        ${statRow('Attaque', s.attack)}
-        ${s.magic_attack ? statRow('Attaque Magique', s.magic_attack) : ''}
+        ${statRow('Level', s.level, '#F5A623')}
+        ${statRow('Attack', s.attack)}
+        ${s.magic_attack ? statRow('M.Attack', s.magic_attack) : ''}
         ${statRow('DEF', s.def)}
         ${statRow('M.DEF', s.m_def)}
-        ${statRow('Esquive', s.flee)}
-        ${statRow('Toucher', s.hit)}
+        ${statRow('Flee', s.flee)}
+        ${statRow('Hit', s.hit)}
         ${statRow('ASPD', s.aspd)}
-        ${statRow('Vitesse', s.move_speed)}
-        ${statRow('EXP Base', s.base_exp, '#4A90D9')}
-        ${statRow('EXP Classe', s.job_exp, '#4A90D9', true)}
+        ${statRow('Speed', s.move_speed)}
+        ${statRow('Base EXP', s.base_exp, '#4A90D9')}
+        ${statRow('Job EXP', s.job_exp, '#4A90D9', true)}
       </div>
     </div>
 
     ${elEntries.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Résistances élémentaires</div></div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div></div>
       <div class="stats-card" style="padding:12px">
       ${elEntries.map(({k,v}) => {
         const c = elColor(k);
@@ -1030,7 +1065,7 @@ function renderMonsterDetail(m) {
     ${maps.length ? `
     <div class="detail-section" id="zones-section">
       <div class="section-header">
-        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Spawn Zones</div></div>
       </div>
       ${sortedMaps.map(mp => `<div class="map-row clickable" onclick='openZoneDetail(${JSON.stringify(mp.name)}, ${mp.number||0})'>
         <div class="map-thumb">
@@ -1046,10 +1081,10 @@ function renderMonsterDetail(m) {
     </div>` : `
     <div class="detail-section" id="zones-section">
       <div class="section-header">
-        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Zones de spawn</div></div>
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Spawn Zones</div></div>
       </div>
       <div class="zones-empty-collapsed" id="zones-empty-toggle" onclick="toggleEmptyZones()">
-        <span style="color:var(--text-muted);font-size:12px">Non disponibles pour cette source de données</span>
+        <span style="color:var(--text-muted);font-size:12px">No spawn data in current source (rAthena mob_db)</span>
         <span class="chevron" style="color:var(--text-muted)">▾</span>
       </div>
       <div class="empty-msg" id="zones-empty-detail" style="display:none">
@@ -1059,7 +1094,7 @@ function renderMonsterDetail(m) {
 
     ${modes.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Comportement</div></div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Behavior</div></div></div>
       <div>${modes.map(m=>`<span class="mode-chip">${modesFr(m)}</span>`).join('')}</div>
     </div>` : ''}
   `;
@@ -1152,7 +1187,7 @@ function renderZoneDetail(mapName, mapNumber) {
 
   const dv = document.getElementById('detail-view');
   dv.innerHTML = `
-    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <button id="back-btn" onclick="goBack()">← Back</button>
 
     <div class="detail-hero">
       <div class="map-thumb" style="width:90px;height:90px;margin:0 auto">
@@ -1170,7 +1205,7 @@ function renderZoneDetail(mapName, mapNumber) {
     </div>
 
     <div class="detail-section">
-      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Monstres sur cette carte</div></div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Monsters in this zone</div></div></div>
       ${monstersHere.length === 0 ? `<div class="empty-msg">Aucun autre monstre trouvé pour cette carte dans la base.</div>` :
         monstersHere.map(({monster: m2, spawn}) => {
           const el2 = m2.type || 'neutral';
@@ -1215,18 +1250,18 @@ function renderItemDetail(item) {
   const bonusEntries = Object.entries(bonus);
   const dv = document.getElementById('detail-view');
 
-  // Section équipement (armes/armures/garments/boots/shields/accessories)
-  // Affichée uniquement si l'item est un équipement. Infos laissées en
-  // anglais (noms techniques rAthena), traduction FR à ajouter plus tard.
+  // For CARDS: only show the slot chip in badges (no full Equipment section)
+  // For WEAPONS/ARMORS: show the full Equipment section
+  const isCard = type === 'card';
+  const slotLabel = slotReadable(item.locations);
   let equipHtml = '';
-  if (item.is_equip) {
-    const locs = (item.locations || []).join(', ') || '—';
+  if (item.is_equip && !isCard) {
     const jobs = (item.jobs || []).join(', ') || '—';
     const classes = (item.classes || []).join(', ') || '—';
     equipHtml = `<div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Equipment</div></div></div>
       <div class="stats-card">
-        ${statRow('Slot', locs)}
+        ${statRow('Slot', slotLabel)}
         ${item.defense!=null?statRow('Defense', item.defense):''}
         ${item.attack!=null?statRow('Attack', item.attack):''}
         ${item.weapon_range!=null?statRow('Range', item.weapon_range):''}
@@ -1241,7 +1276,7 @@ function renderItemDetail(item) {
   }
 
   dv.innerHTML = `
-    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <button id="back-btn" onclick="goBack()">← Back</button>
     <div class="detail-hero">
       <div class="detail-hero-bg" style="--el-color:${color}"></div>
       ${itemImgUrl(item)?`<img class="detail-sprite" src="${itemImgUrl(item)}" style="max-height:80px" onerror="this.style.display='none'">`:'<div style="font-size:48px;position:relative">📦</div>'}
@@ -1250,8 +1285,10 @@ function renderItemDetail(item) {
     </div>
     <div class="detail-badges">
       <span class="chip" style="color:${color};border-color:${color}55;background:${color}18">${typeFr(type)}</span>
-      ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Nv. ${item.required_level}</span>`:''}
+      ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Lv. ${item.required_level}</span>`:''}
       ${item.slots?`<span class="chip" style="color:var(--text-2);border-color:var(--border)">${item.slots} slot${item.slots>1?'s':''}</span>`:''}
+      ${isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--rune-blue);border-color:var(--rune-blue)55;background:var(--rune-blue)18">🃏 ${slotLabel}</span>` : ''}
+      ${!isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--rune-blue);border-color:var(--rune-blue)55;background:var(--rune-blue)18">${slotLabel}</span>` : ''}
     </div>
     ${item.description?`<div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Description</div></div></div>
@@ -1259,12 +1296,12 @@ function renderItemDetail(item) {
     </div>`:''}
     ${equipHtml}
     <div class="detail-section">
-      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Infos</div></div></div>
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Info</div></div></div>
       <div class="stats-card">
-        ${item.weight!=null?statRow('Poids', (item.weight/10)+' w'):''}
-        ${item.buy_price!=null?statRow('Prix achat', item.buy_price+' z', '#F5A623'):''}
-        ${item.sell_price!=null?statRow('Prix vente', item.sell_price+' z', '#8A5C12'):''}
-        ${!item.weight && !item.buy_price && !item.sell_price ? statRow('Détails', 'Non disponibles', null, true) : ''}
+        ${item.weight!=null?statRow('Weight', (item.weight/10)+' w'):''}
+        ${item.buy_price!=null?statRow('Buy Price', item.buy_price+' z', '#F5A623'):''}
+        ${item.sell_price!=null?statRow('Sell Price', item.sell_price+' z', '#8A5C12'):''}
+        ${!item.weight && !item.buy_price && !item.sell_price ? statRow('Details', 'Not available', null, true) : ''}
       </div>
     </div>
     ${bonusEntries.length?`<div class="detail-section">
@@ -1336,7 +1373,7 @@ function openAdminPanel() {
 function renderAdminPanel() {
   const dv = document.getElementById('detail-view');
   dv.innerHTML = `
-    <button id="back-btn" onclick="goBack()">← Retour</button>
+    <button id="back-btn" onclick="goBack()">← Back</button>
     <div class="detail-hero">
       <div style="font-size:40px">⚙️</div>
       <div class="detail-name">MODE ADMIN</div>
@@ -1432,7 +1469,7 @@ function clearSearch() {
   document.getElementById('admin-btn').classList.toggle('on', ADMIN.enabled);
   buildFilters();
   // On essaie toujours de charger ro_data.json (peut avoir été mis à jour),
-  // avec repli automatique sur le cache local si le réseau échoue xXx.
+  // avec repli automatique sur le cache local si le réseau échoue.
   await loadData();
 })();
 </script>
