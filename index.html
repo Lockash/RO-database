@@ -484,10 +484,12 @@ const EL_ICON = { fire:'🔥', water:'💧', wind:'🌀', earth:'🌿', holy:'�
                    shadow:'🌑', poison:'☠', undead:'💀', ghost:'👻', neutral:'⬜' };
 const RACE_FR  = { angel:'Angel', demihuman:'Demi-Human', 'demi-human':'Demi-Human',
                     dragon:'Dragon', formless:'Formless', insect:'Insect',
-                    plant:'Plant', undead:'Undead', brute:'Brute', fish:'Fish' };
+                    plant:'Plant', undead:'Undead', brute:'Brute', fish:'Fish',
+                    demon:'Demon' };
 const RACE_COLOR={ angel:'#FFF08A', demihuman:'#E8A040', 'demi-human':'#E8A040',
                     dragon:'#E84040', formless:'#BDC3C7', insect:'#48C774',
-                    plant:'#27AE60', undead:'#95A5A6', brute:'#A0804A', fish:'#4096E8' };
+                    plant:'#27AE60', undead:'#95A5A6', brute:'#A0804A', fish:'#4096E8',
+                    demon:'#9B59B6' };
 const TYPE_COLOR={ weapon:'#E84040', armor:'#4A90D9', card:'#F5A623',
                     usable:'#48C774', etc:'#8888AA', ammo:'#BDC3C7' };
 const TYPE_FR  = { weapon:'Weapon', armor:'Armor', card:'Card',
@@ -500,20 +502,18 @@ function raceColor(r){ return RACE_COLOR[r?.toLowerCase()] || '#8888AA'; }
 function typeColor(t){ return TYPE_COLOR[t?.toLowerCase()] || '#8888AA'; }
 function typeFr(t) { return TYPE_FR[t?.toLowerCase()] || t || '?'; }
 
-// Readable slot name for cards and equipment
-// Cards: shows where the card goes (Armor, Weapon, Garment, Shoes, Headgear, Accessory, Shield)
-// Equipment: shows the broad category (Armor, Weapon, etc.)
+// Readable slot name — keeps headgear precision (Upper/Mid/Low)
 function slotReadable(locations) {
   if (!locations || locations.length === 0) return '—';
   const loc = locations[0];
   const map = {
-    'Upper Headgear': 'Headgear', 'Middle Headgear': 'Headgear (Mid)',
-    'Lower Headgear': 'Headgear (Low)', 'Armor': 'Armor',
-    'Weapon': 'Weapon', 'Shield': 'Shield', 'Left_Hand': 'Shield',
+    'Upper Headgear': 'Upper Headgear', 'Middle Headgear': 'Mid Headgear',
+    'Lower Headgear': 'Lower Headgear', 'Armor': 'Armor',
+    'Weapon': 'Weapon', 'Shield': 'Shield',
     'Garment': 'Garment', 'Shoes': 'Shoes',
     'Right Accessory': 'Accessory', 'Left Accessory': 'Accessory',
     'Accessory (Right)': 'Accessory', 'Accessory (Left)': 'Accessory',
-    'Two-Handed Weapon': 'Two-Hand Weapon',
+    'Two-Handed Weapon': 'Two-Hand Weapon', 'Both_Accessory': 'Accessory',
   };
   return map[loc] || loc;
 }
@@ -616,10 +616,15 @@ function translateScriptEn(script) {
 // standard utilisé par les wikis RO (db.irowiki.org), basé sur l'ID.
 // Si l'image n'existe pas à cette adresse, le onerror du <img> bascule
 // proprement sur l'emoji de repli (géré au niveau de l'affichage).
+// Maps monster name -> base ID (lowest ID = v1, has the real sprite)
+const _baseIdByName = {};
+
 function monsterImgUrl(monster) {
   if (monster.gif) return monster.gif;
   if (!monster.monster_id) return null;
-  return `https://db.irowiki.org/image/monster/${monster.monster_id}.png`;
+  // Variants share the same sprite as their v1 counterpart -> use base ID
+  const baseId = _baseIdByName[monster.monster_info] || monster.monster_id;
+  return `https://db.irowiki.org/image/monster/${baseId}.png`;
 }
 function itemImgUrl(item) {
   if (item.img) return item.img;
@@ -713,8 +718,11 @@ function indexDuplicateMonsters() {
     nameGroups[key].push(m);
   }
   for (const group of Object.values(nameGroups)) {
-    if (group.length < 2) { group[0]._variantIdx = 0; continue; }
     group.sort((a, b) => a.monster_id - b.monster_id);
+    const baseId = group[0].monster_id;
+    // Store base ID for image fallback (all variants share the v1 sprite)
+    _baseIdByName[group[0].monster_info] = baseId;
+    if (group.length < 2) { group[0]._variantIdx = 0; continue; }
     group.forEach((m, i) => { m._variantIdx = i + 1; });
   }
 }
@@ -887,6 +895,7 @@ function buildMonsterCard(m) {
           ${EL_ICON[el]||''} ${elFr(el)}
         </span>
         ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}44;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
+        ${isMvp(m) ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : (m.modes||[]).includes('boss') ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022">⚡ Mini-Boss</span>` : ''}
       </div>
     </div>
     <svg class="chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
@@ -992,6 +1001,7 @@ function renderMonsterDetail(m) {
       </span>
       ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}55;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
       ${m.size ? `<span class="chip" style="color:var(--text-2);border-color:var(--border)">${{small:'Small',medium:'Medium',large:'Large'}[m.size]||m.size}</span>` : ''}
+      ${mvp ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : modes.includes('boss') ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022;font-weight:700">⚡ Mini-Boss</span>` : ''}
     </div>
 
     <div class="detail-section">
@@ -1287,7 +1297,7 @@ function renderItemDetail(item) {
       <span class="chip" style="color:${color};border-color:${color}55;background:${color}18">${typeFr(type)}</span>
       ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Lv. ${item.required_level}</span>`:''}
       ${item.slots?`<span class="chip" style="color:var(--text-2);border-color:var(--border)">${item.slots} slot${item.slots>1?'s':''}</span>`:''}
-      ${isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--rune-blue);border-color:var(--rune-blue)55;background:var(--rune-blue)18">🃏 ${slotLabel}</span>` : ''}
+      ${isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--gold);border-color:var(--gold)88;background:var(--gold)22;font-size:12px;padding:5px 12px">🃏 ${slotLabel} Card</span>` : ''}
       ${!isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--rune-blue);border-color:var(--rune-blue)55;background:var(--rune-blue)18">${slotLabel}</span>` : ''}
     </div>
     ${item.description?`<div class="detail-section">
