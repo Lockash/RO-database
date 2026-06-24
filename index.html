@@ -475,38 +475,41 @@ function isMvp(m) {
   return modes.includes('mvp');
 }
 
-// Known mini-boss IDs (Class:Boss in rAthena without Modes.Mvp:true).
-// Used as fallback when modes array is empty (pre-rescan data).
-// These are the standard pre-renewal mini-bosses.
+// Accurate Mini-Boss list (Class:Boss without Modes.Mvp in rAthena pre-renewal).
+// Source: ratemyserver.net + irowiki pre-renewal mob database.
+// Baphomet Jr is NOT a mini-boss (no special class flag).
+// Kasa IS a mini-boss (Class:Boss in mob_db).
 const MINI_BOSS_IDS = new Set([
-  1046, // Doppelganger (also MVP but listed as safety)
-  1101, // Baphomet Jr.
-  1059, // Mistress
-  1087, // Orc Hero
-  1089, // Toad
-  1090, // Mastering
-  1091, // Dragon Fly
-  1092, // Vagabond Wolf
-  1093, // Eclipse
-  1096, // Angeling
-  1120, // Ghostring
-  1147, // Choco
-  1150, // Phreeoni
-  1157, // Moonlight Flower (also MVP)
-  1302, // Leib Olmai
-  1388, // Maya Purple
-  1418, // Osiris (also MVP)
-  1492, // Mistress of Shelter
-  1582, // Deviling ← THE MAIN ONE
-  1583, // Fallen Bishop Hibram? no, check
-  1623, // Bloody Knight
-  1630, // Cat O Nine Tails
-  1658, // Dark Lord
-  1688, // Valkyrie Randgris (also MVP)
+  1046,  // Doppelganger (MVP too, but listed as safety)
+  1059,  // Mistress
+  1087,  // Orc Hero
+  1089,  // Toad
+  1090,  // Mastering
+  1091,  // Dragon Fly
+  1092,  // Vagabond Wolf
+  1093,  // Eclipse
+  1096,  // Angeling
+  1120,  // Ghostring
+  1147,  // Choco
+  1150,  // Phreeoni
+  1157,  // Moonlight Flower (MVP)
+  1251,  // Mysteltainn
+  1252,  // Executioner
+  1253,  // Tirfing
+  1302,  // Leib Olmai
+  1388,  // Maya Purple
+  1492,  // Mistress of Shelter
+  1582,  // Deviling ★
+  1623,  // Bloody Knight
+  1630,  // Cat O Nine Tails
+  1649,  // Kasa ★
+  1658,  // Dark Lord
+  1688,  // Valkyrie Randgris (MVP)
+  1832,  // Dark Illusion
 ]);
 
 function isMiniBoss(m) {
-  if (isMvp(m)) return false; // MVPs take priority
+  if (isMvp(m)) return false;
   const modes = m.modes || m.skills?.mode || [];
   if (modes.includes('boss')) return true;
   return MINI_BOSS_IDS.has(m.monster_id);
@@ -514,6 +517,92 @@ function isMiniBoss(m) {
 function adjustedRate(monster, rate) {
   const mult = isMvp(monster) ? ADMIN.mvpRateMult : ADMIN.globalRateMult;
   return Math.min(rate * mult, 100);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ELEMENTAL RESISTANCE TABLE (pre-renewal, irowiki)
+// Indexed as ELEM_TABLE[defElement][atkElement][level-1] = % damage received.
+// Level 1..4. Rows = defending element, Columns = attacking element.
+// Source: https://irowiki.org/wiki/Element
+// ════════════════════════════════════════════════════════════════════════════
+const ELEM_KEYS = ['neutral','water','earth','fire','wind','poison','holy','shadow','ghost','undead'];
+// Each entry: [Lv1, Lv2, Lv3, Lv4]
+// Format: ELEM_TABLE[defending][attacking] = [lv1, lv2, lv3, lv4]
+const ELEM_TABLE = {
+  neutral: {
+    neutral:[100,100,100,100], water:[100,100,100,100], earth:[100,100,100,100],
+    fire:[100,100,100,100],   wind:[100,100,100,100],  poison:[100,100,100,100],
+    holy:[100,100,100,100],   shadow:[100,100,100,100], ghost:[90,70,50,0],
+    undead:[100,100,100,100],
+  },
+  water: {
+    neutral:[100,100,100,100], water:[25,0,-25,-50], earth:[100,100,100,100],
+    fire:[90,80,70,60],        wind:[150,175,200,225], poison:[150,150,150,150],
+    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[100,100,100,100],
+    undead:[100,100,100,100],
+  },
+  earth: {
+    neutral:[100,100,100,100], water:[100,100,100,100], earth:[25,0,-25,-50],
+    fire:[150,175,200,225],    wind:[90,80,70,60], poison:[150,150,150,150],
+    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[100,100,100,100],
+    undead:[100,100,100,100],
+  },
+  fire: {
+    neutral:[100,100,100,100], water:[150,175,200,225], earth:[90,80,70,60],
+    fire:[25,0,-25,-50],       wind:[100,100,100,100], poison:[150,150,150,150],
+    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[100,100,100,100],
+    undead:[90,80,70,60],
+  },
+  wind: {
+    neutral:[100,100,100,100], water:[90,80,70,60], earth:[150,175,200,225],
+    fire:[100,100,100,100],    wind:[25,0,-25,-50], poison:[150,150,150,150],
+    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[100,100,100,100],
+    undead:[100,100,100,100],
+  },
+  poison: {
+    neutral:[100,100,100,100], water:[150,150,150,150], earth:[150,150,150,150],
+    fire:[150,150,150,150],    wind:[150,150,150,150], poison:[0,-25,-50,-75],
+    holy:[75,50,25,0],         shadow:[75,50,25,0], ghost:[75,50,25,0],
+    undead:[75,50,25,0],
+  },
+  holy: {
+    neutral:[100,100,100,100], water:[100,100,100,100], earth:[100,100,100,100],
+    fire:[100,100,100,100],    wind:[100,100,100,100], poison:[75,50,25,0],
+    holy:[0,-25,-50,-75],      shadow:[125,150,175,200], ghost:[90,80,70,60],
+    undead:[125,150,175,200],
+  },
+  shadow: {
+    neutral:[100,100,100,100], water:[100,100,100,100], earth:[100,100,100,100],
+    fire:[100,100,100,100],    wind:[100,100,100,100], poison:[75,50,25,0],
+    holy:[125,150,175,200],    shadow:[0,-25,-50,-75], ghost:[90,80,70,60],
+    undead:[0,-25,-50,-75],
+  },
+  ghost: {
+    neutral:[90,70,50,0],      water:[100,100,100,100], earth:[100,100,100,100],
+    fire:[100,100,100,100],    wind:[100,100,100,100], poison:[75,50,25,0],
+    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[125,150,175,200],
+    undead:[100,100,100,100],
+  },
+  undead: {
+    neutral:[100,100,100,100], water:[100,100,100,100], earth:[100,100,100,100],
+    fire:[125,150,175,200],    wind:[100,100,100,100], poison:[75,50,25,0],
+    holy:[125,150,175,200],    shadow:[0,-25,-50,-75], ghost:[100,100,100,100],
+    undead:[0,-25,-50,-75],
+  },
+};
+
+// Returns elemental damage table {neutral:100, water:25, ...} for a monster
+// based on its defending element and element level (1-4).
+function computeElementalResistance(element, level) {
+  const def = (element || 'neutral').toLowerCase();
+  const lv = Math.min(Math.max((level || 1), 1), 4) - 1;
+  const row = ELEM_TABLE[def];
+  if (!row) return null;
+  const result = {};
+  for (const atk of ELEM_KEYS) {
+    result[atk] = (row[atk] || [100,100,100,100])[lv];
+  }
+  return result;
 }
 
 
@@ -674,8 +763,30 @@ function translateScriptEn(script) {
 // standard utilisé par les wikis RO (db.irowiki.org), basé sur l'ID.
 // Si l'image n'existe pas à cette adresse, le onerror du <img> bascule
 // proprement sur l'emoji de repli (géré au niveau de l'affichage).
-// Maps monster name -> base ID (lowest ID = v1, has the real sprite)
-const _baseIdByName = {};
+// Maps item aegis_name/name -> list of {monster, rate} sorted by rate desc
+const _droppedByIndex = {};
+
+function buildDroppedByIndex() {
+  for (const m of DB.monsters) {
+    for (const d of (m.drops || [])) {
+      const key = d.name;
+      if (!key) continue;
+      if (!_droppedByIndex[key]) _droppedByIndex[key] = [];
+      _droppedByIndex[key].push({ monster: m, rate: d.rate });
+    }
+  }
+  // Sort each list by rate descending
+  for (const key of Object.keys(_droppedByIndex)) {
+    _droppedByIndex[key].sort((a, b) => b.rate - a.rate);
+  }
+}
+
+function getDroppedBy(item) {
+  // Try aegis_name first (rAthena), then name (RagnaAPI)
+  return _droppedByIndex[item.aegis_name]
+    || _droppedByIndex[item.name]
+    || [];
+}
 
 function monsterImgUrl(monster) {
   if (monster.gif) return monster.gif;
@@ -747,6 +858,7 @@ async function loadData() {
 
     DB = { monsters: data.monsters, items: data.items };
     indexDuplicateMonsters();
+    buildDroppedByIndex();
     saveToCache();
     showInitView(false);
     switchTab(state.tab, true);
@@ -754,6 +866,7 @@ async function loadData() {
     showInitView(false);
     if (loadFromCache()) {
       indexDuplicateMonsters();
+      buildDroppedByIndex();
       switchTab(state.tab, true);
       return;
     }
@@ -1024,7 +1137,14 @@ function renderMonsterDetail(m) {
   const modes = m.modes || m.skills?.mode || [];
   const mvp = isMvp(m);
 
-  const elEntries = Object.entries(ed).map(([k,v]) => ({k, v: Number(v)}))
+  // Compute elemental resistance: prefer stored data, fall back to formula
+  const edSource = Object.keys(ed).length > 0
+    ? ed
+    : (computeElementalResistance(m.type, m.element_power) || {});
+
+  const elEntries = Object.entries(edSource)
+    .map(([k,v]) => ({k: k.toLowerCase(), v: Number(v)}))
+    .filter(({k}) => ELEM_KEYS.includes(k))
     .sort((a,b) => b.v - a.v);
 
   // Résumé respawn / quantité (sous le sprite) — trié par qté décroissante
@@ -1079,12 +1199,15 @@ function renderMonsterDetail(m) {
 
     ${elEntries.length ? `
     <div class="detail-section">
-      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div></div>
+      <div class="section-header">
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div>
+        ${Object.keys(ed).length === 0 ? `<span style="font-size:9px;color:var(--text-muted)">computed</span>` : ''}
+      </div>
       <div class="stats-card" style="padding:10px 12px">
       ${elEntries.map(({k,v}) => {
         const c = elColor(k);
         const fr = elFr(k);
-        const pct = Math.min(v/200, 1);
+        const pct = Math.min(Math.max(v,0)/200, 1);
         return `<div class="el-row">
           <div class="el-label" style="color:${c}">${EL_ICON[k]||''} ${fr}</div>
           <div class="el-bar-bg"><div class="el-bar-fill" style="width:${pct*100}%;background:${v>100?c:'var(--text-muted)'}"></div></div>
@@ -1092,13 +1215,7 @@ function renderMonsterDetail(m) {
         </div>`;
       }).join('')}
       </div>
-    </div>` : `
-    <div class="detail-section">
-      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div></div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted)">
-        No elemental data in current source. Check <a href="https://ratemyserver.net/index.php?page=mob_db&mob_id=${m.monster_id}&small=1&back=1" target="_blank" style="color:var(--rune-blue)">ratemyserver</a> for full resistances.
-      </div>
-    </div>`}
+    </div>` : ''}
 
     ${drops.length ? `
     <div class="detail-section">
@@ -1383,6 +1500,35 @@ function renderItemDetail(item) {
         ${bonusEntries.map(([k,v],i)=>statRow(k, JSON.stringify(v),'#48C774', i===bonusEntries.length-1)).join('')}
       </div>
     </div>`:''}
+    ${(() => {
+      const droppedBy = getDroppedBy(item);
+      if (!droppedBy.length) return '';
+      const shown = droppedBy.slice(0, 20); // cap at 20 for performance
+      return `<div class="detail-section">
+        <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Dropped By</div></div><span style="font-size:10px;color:var(--text-muted)">${droppedBy.length} mob${droppedBy.length>1?'s':''}</span></div>
+        ${shown.map(({monster: mob, rate}) => {
+          const mobEl = mob.type || 'neutral';
+          const mobColor = elColor(mobEl);
+          const fmt = rate >= 1 ? rate.toFixed(2)+'%' : rate.toFixed(3)+'%';
+          const rateColor = rate >= 50 ? '#E84040' : rate >= 1 ? '#F5A623' : '#8888AA';
+          return `<div class="monster-card" data-monster-id="${mob.monster_id}" style="cursor:pointer;margin-bottom:6px">
+            <div class="sprite-box">
+              ${monsterImgUrl(mob)?`<img src="${monsterImgUrl(mob)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">`:'🐾'}
+            </div>
+            <div class="card-info">
+              <div class="card-name">${displayName(mob.monster_info)}${mob._variantIdx>1?` <span style="color:var(--text-muted);font-size:10px">(v${mob._variantIdx})</span>`:''}</div>
+              <div class="card-sub">ID: ${mob.monster_id} · Lv.${mob.main_stats?.level||'?'}</div>
+              <div class="card-chips">
+                <span class="chip" style="color:${mobColor};border-color:${mobColor}44;background:${mobColor}18">${EL_ICON[mobEl]||''} ${elFr(mobEl)}</span>
+                ${isMvp(mob)?`<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22">★ MVP</span>`:isMiniBoss(mob)?`<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022">⚡ Mini-Boss</span>`:''}
+              </div>
+            </div>
+            <span style="color:${rateColor};font-weight:600;font-size:12px;flex-shrink:0">${fmt}</span>
+          </div>`;
+        }).join('')}
+        ${droppedBy.length > 20 ? `<div class="empty-msg" style="padding:8px 0">+${droppedBy.length-20} more mobs not shown</div>` : ''}
+      </div>`;
+    })()}
   `;
 }
 
@@ -1502,10 +1648,18 @@ function updateAdminValue(key, value) {
 // noms d'objets qui pourraient casser un attribut HTML généré dynamiquement.
 // ════════════════════════════════════════════════════════════════════════════
 document.getElementById('detail-view').addEventListener('click', (e) => {
-  const row = e.target.closest('[data-item-id]');
-  if (row) {
-    const id = parseInt(row.getAttribute('data-item-id'), 10);
+  // Drop click -> item detail
+  const dropRow = e.target.closest('[data-item-id]');
+  if (dropRow) {
+    const id = parseInt(dropRow.getAttribute('data-item-id'), 10);
     if (!isNaN(id)) openItemDetail(id);
+    return;
+  }
+  // Dropped-by click -> monster detail
+  const mobRow = e.target.closest('[data-monster-id]');
+  if (mobRow) {
+    const id = parseInt(mobRow.getAttribute('data-monster-id'), 10);
+    if (!isNaN(id)) openMonsterDetail(id);
   }
 });
 
