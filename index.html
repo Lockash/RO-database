@@ -476,13 +476,9 @@ function isMvp(m) {
 }
 
 // Accurate Mini-Boss list (Class:Boss without Modes.Mvp in rAthena pre-renewal).
-// Source: ratemyserver.net + irowiki pre-renewal mob database.
-// Baphomet Jr is NOT a mini-boss (no special class flag).
-// Kasa IS a mini-boss (Class:Boss in mob_db).
+// Official rAthena mini-boss list (Class:Boss without Modes.Mvp).
+// Source: https://github.com/rathena/rathena/wiki/List-of-Minibosses-&-Card-IDs
 const MINI_BOSS_IDS = new Set([
-  1046,  // Doppelganger (MVP too, but listed as safety)
-  1059,  // Mistress
-  1087,  // Orc Hero
   1089,  // Toad
   1090,  // Mastering
   1091,  // Dragon Fly
@@ -490,22 +486,39 @@ const MINI_BOSS_IDS = new Set([
   1093,  // Eclipse
   1096,  // Angeling
   1120,  // Ghostring
-  1147,  // Choco
-  1150,  // Phreeoni
-  1157,  // Moonlight Flower (MVP)
-  1251,  // Mysteltainn
-  1252,  // Executioner
-  1253,  // Tirfing
-  1302,  // Leib Olmai
-  1388,  // Maya Purple
-  1492,  // Mistress of Shelter
-  1582,  // Deviling ★
-  1623,  // Bloody Knight
-  1630,  // Cat O Nine Tails
-  1649,  // Kasa ★
-  1658,  // Dark Lord
-  1688,  // Valkyrie Randgris (MVP)
-  1832,  // Dark Illusion
+  1198,  // Dark Priest
+  1203,  // Mysteltainn
+  1204,  // Ogretooth
+  1205,  // Executioner
+  1259,  // Gryphon
+  1262,  // Mutant Dragonoid
+  1283,  // Chimera
+  1289,  // Maya Purple
+  1295,  // Owl Baron
+  1302,  // Dark Illusion
+  1307,  // Cat o Nine Tails
+  1320,  // Owl Duke
+  1388,  // Archangeling
+  1582,  // Deviling
+  1681,  // Gemini-S58
+  1700,  // Dame of Sentinel
+  1701,  // Mistress of Shelter
+  1702,  // Baroness of Retribution
+  1703,  // Lady Solace
+  1704,  // Odium of Thanatos
+  1705,  // Despero of Thanatos
+  1706,  // Maero of Thanatos
+  1707,  // Dolor of Thanatos
+  1720,  // Hydrolancer
+  1754,  // Skeggiold
+  1755,  // Skeggiold (variant)
+  1783,  // Galion
+  1829,  // Sword Guardian
+  1830,  // Bow Guardian
+  1831,  // Salamander
+  1833,  // Kasa
+  1839,  // Byorgue
+  1870,  // Necromancer
 ]);
 
 function isMiniBoss(m) {
@@ -765,6 +778,7 @@ function translateScriptEn(script) {
 // proprement sur l'emoji de repli (géré au niveau de l'affichage).
 // Maps item aegis_name/name -> list of {monster, rate} sorted by rate desc
 const _droppedByIndex = {};
+const _baseIdByName = {};
 
 function buildDroppedByIndex() {
   for (const m of DB.monsters) {
