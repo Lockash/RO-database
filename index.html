@@ -257,8 +257,18 @@
   .stat-label { font-size: 12px; color: var(--text-2); }
   .stat-value { font-size: 12px; font-weight: 600; color: var(--text-1); text-align: right; }
 
-  /* Attr grid */
-  .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  /* Compact stats grid — 2 per row */
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .stat-cell {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .stat-cell.sg-full { grid-column: span 2; flex-direction: row; justify-content: space-between; align-items: center; }
+  .sg-label { font-size: 10px; color: var(--text-muted); }
+  .sg-val { font-size: 14px; font-weight: 700; color: var(--text-1); }
   .attr-box {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 6px;
@@ -461,10 +471,45 @@ function saveAdmin() {
   try { localStorage.setItem(ADMIN_KEY, JSON.stringify(ADMIN)); } catch (e) {}
 }
 function isMvp(m) {
-  // Format rAthena (actuel) : m.modes est un tableau plat.
-  // Format RagnaAPI (legacy) : m.skills.mode.
   const modes = m.modes || m.skills?.mode || [];
   return modes.includes('mvp');
+}
+
+// Known mini-boss IDs (Class:Boss in rAthena without Modes.Mvp:true).
+// Used as fallback when modes array is empty (pre-rescan data).
+// These are the standard pre-renewal mini-bosses.
+const MINI_BOSS_IDS = new Set([
+  1046, // Doppelganger (also MVP but listed as safety)
+  1101, // Baphomet Jr.
+  1059, // Mistress
+  1087, // Orc Hero
+  1089, // Toad
+  1090, // Mastering
+  1091, // Dragon Fly
+  1092, // Vagabond Wolf
+  1093, // Eclipse
+  1096, // Angeling
+  1120, // Ghostring
+  1147, // Choco
+  1150, // Phreeoni
+  1157, // Moonlight Flower (also MVP)
+  1302, // Leib Olmai
+  1388, // Maya Purple
+  1418, // Osiris (also MVP)
+  1492, // Mistress of Shelter
+  1582, // Deviling ← THE MAIN ONE
+  1583, // Fallen Bishop Hibram? no, check
+  1623, // Bloody Knight
+  1630, // Cat O Nine Tails
+  1658, // Dark Lord
+  1688, // Valkyrie Randgris (also MVP)
+]);
+
+function isMiniBoss(m) {
+  if (isMvp(m)) return false; // MVPs take priority
+  const modes = m.modes || m.skills?.mode || [];
+  if (modes.includes('boss')) return true;
+  return MINI_BOSS_IDS.has(m.monster_id);
 }
 function adjustedRate(monster, rate) {
   const mult = isMvp(monster) ? ADMIN.mvpRateMult : ADMIN.globalRateMult;
@@ -518,10 +563,23 @@ function slotReadable(locations) {
   return map[loc] || loc;
 }
 
-// Filter/label for element chips in topbar
-const EL_FILTER_LABELS = { fire:'🔥 Fire', water:'💧 Water', wind:'🌀 Wind',
-  earth:'🌿 Earth', holy:'✨ Holy', shadow:'🌑 Shadow', poison:'☠ Poison',
-  undead:'💀 Undead', ghost:'👻 Ghost', neutral:'⬜ Neutral' };
+// Slot icons: small item images representing each equip slot
+// Using well-known item IDs from irowiki as slot icons
+const SLOT_ICON = {
+  'Upper Headgear':  'https://db.irowiki.org/image/item/2229.png', // helm
+  'Mid Headgear':    'https://db.irowiki.org/image/item/5005.png', // sunglasses
+  'Lower Headgear':  'https://db.irowiki.org/image/item/5052.png', // candy cane mouth
+  'Armor':           'https://db.irowiki.org/image/item/2302.png', // cotton shirt
+  'Weapon':          'https://db.irowiki.org/image/item/1101.png', // sword
+  'Two-Hand Weapon': 'https://db.irowiki.org/image/item/1183.png', // two-hand sword
+  'Shield':          'https://db.irowiki.org/image/item/2101.png', // guard
+  'Garment':         'https://db.irowiki.org/image/item/2501.png', // muffler
+  'Shoes':           'https://db.irowiki.org/image/item/2401.png', // shoes
+  'Accessory':       'https://db.irowiki.org/image/item/2601.png', // ring
+};
+function slotIconUrl(slot) {
+  return SLOT_ICON[slot] || null;
+}
 function displayName(n){ return (n||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
 // ── Script bonus translator (English) ────────────────────────────────────────
@@ -895,7 +953,7 @@ function buildMonsterCard(m) {
           ${EL_ICON[el]||''} ${elFr(el)}
         </span>
         ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}44;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
-        ${isMvp(m) ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : (m.modes||[]).includes('boss') ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022">⚡ Mini-Boss</span>` : ''}
+        ${isMvp(m) ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : isMiniBoss(m) ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022">⚡ Mini-Boss</span>` : ''}
       </div>
     </div>
     <svg class="chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
@@ -989,7 +1047,7 @@ function renderMonsterDetail(m) {
     <div class="detail-hero" style="--el-color:${elColor_}">
       <div class="detail-hero-bg"></div>
       ${monsterImgUrl(m) ? `<img class="detail-sprite" src="${monsterImgUrl(m)}" alt="${name}" onerror="this.style.display='none'">` : '<div style="height:80px;display:flex;align-items:center;font-size:48px">🐾</div>'}
-      ${mvp ? `<div style="font-size:10px;color:#FFF08A;font-family:'Press Start 2P',monospace;margin-top:4px;position:relative;z-index:1">★ MVP</div>` : (modes.includes('boss') ? `<div style="font-size:9px;color:#E8A040;font-family:'Press Start 2P',monospace;margin-top:4px;position:relative;z-index:1">⚡ Mini-Boss</div>` : '')}
+      ${mvp ? `<div style="font-size:10px;color:#FFF08A;font-family:'Press Start 2P',monospace;margin-top:4px;position:relative;z-index:1">★ MVP</div>` : isMiniBoss(m) ? `<div style="font-size:9px;color:#E8A040;font-family:'Press Start 2P',monospace;margin-top:4px;position:relative;z-index:1">⚡ Mini-Boss</div>` : ''}
       <div class="detail-name">${name}${m._variantIdx > 1 ? ` (v${m._variantIdx})` : ''}</div>
       <div class="detail-id">ID : ${m.monster_id}</div>
     </div>
@@ -1001,43 +1059,46 @@ function renderMonsterDetail(m) {
       </span>
       ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}55;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
       ${m.size ? `<span class="chip" style="color:var(--text-2);border-color:var(--border)">${{small:'Small',medium:'Medium',large:'Large'}[m.size]||m.size}</span>` : ''}
-      ${mvp ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : modes.includes('boss') ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022;font-weight:700">⚡ Mini-Boss</span>` : ''}
+      ${mvp ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : isMiniBoss(m) ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022;font-weight:700">⚡ Mini-Boss</span>` : ''}
     </div>
 
     <div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Stats</div></div></div>
-      <div class="stats-card">
-        ${statRow('HP', s.hp, '#E84040')}
-        ${statRow('Level', s.level, '#F5A623')}
-        ${statRow('Attack', s.attack)}
-        ${s.magic_attack ? statRow('M.Attack', s.magic_attack) : ''}
-        ${statRow('DEF', s.def)}
-        ${statRow('M.DEF', s.m_def)}
-        ${statRow('Flee', s.flee)}
-        ${statRow('Hit', s.hit)}
-        ${statRow('ASPD', s.aspd)}
-        ${statRow('Speed', s.move_speed)}
-        ${statRow('Base EXP', s.base_exp, '#4A90D9')}
-        ${statRow('Job EXP', s.job_exp, '#4A90D9', true)}
+      <div class="stats-grid">
+        <div class="stat-cell"><span class="sg-label">HP</span><span class="sg-val" style="color:#E84040">${s.hp||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">Level</span><span class="sg-val" style="color:#F5A623">${s.level||'—'}</span></div>
+        <div class="stat-cell sg-full"><span class="sg-label">Attack</span><span class="sg-val">${s.attack||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">DEF</span><span class="sg-val">${s.def||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">M.DEF</span><span class="sg-val">${s.m_def||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">Flee</span><span class="sg-val">${s.flee||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">Hit</span><span class="sg-val">${s.hit||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">Base EXP</span><span class="sg-val" style="color:#4A90D9">${s.base_exp||'—'}</span></div>
+        <div class="stat-cell"><span class="sg-label">Job EXP</span><span class="sg-val" style="color:#4A90D9">${s.job_exp||'—'}</span></div>
       </div>
     </div>
 
     ${elEntries.length ? `
     <div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div></div>
-      <div class="stats-card" style="padding:12px">
+      <div class="stats-card" style="padding:10px 12px">
       ${elEntries.map(({k,v}) => {
         const c = elColor(k);
         const fr = elFr(k);
         const pct = Math.min(v/200, 1);
         return `<div class="el-row">
-          <div class="el-label" style="color:${c}">${fr}</div>
+          <div class="el-label" style="color:${c}">${EL_ICON[k]||''} ${fr}</div>
           <div class="el-bar-bg"><div class="el-bar-fill" style="width:${pct*100}%;background:${v>100?c:'var(--text-muted)'}"></div></div>
-          <div class="el-pct" style="color:${v>100?'#E84040':'var(--text-muted)'}">${v}%</div>
+          <div class="el-pct" style="color:${v>100?'#E84040':v<100?'#48C774':'var(--text-muted)'}">${v}%</div>
         </div>`;
       }).join('')}
       </div>
-    </div>` : ''}
+    </div>` : `
+    <div class="detail-section">
+      <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div></div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted)">
+        No elemental data in current source. Check <a href="https://ratemyserver.net/index.php?page=mob_db&mob_id=${m.monster_id}&small=1&back=1" target="_blank" style="color:var(--rune-blue)">ratemyserver</a> for full resistances.
+      </div>
+    </div>`}
 
     ${drops.length ? `
     <div class="detail-section">
@@ -1293,12 +1354,14 @@ function renderItemDetail(item) {
       <div class="detail-name">${name}</div>
       <div class="detail-id">ID : ${item.item_id}</div>
     </div>
-    <div class="detail-badges">
-      <span class="chip" style="color:${color};border-color:${color}55;background:${color}18">${typeFr(type)}</span>
-      ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Lv. ${item.required_level}</span>`:''}
-      ${item.slots?`<span class="chip" style="color:var(--text-2);border-color:var(--border)">${item.slots} slot${item.slots>1?'s':''}</span>`:''}
-      ${isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--gold);border-color:var(--gold)88;background:var(--gold)22;font-size:12px;padding:5px 12px">🃏 ${slotLabel} Card</span>` : ''}
-      ${!isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--rune-blue);border-color:var(--rune-blue)55;background:var(--rune-blue)18">${slotLabel}</span>` : ''}
+    <div class="detail-badges" style="justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span class="chip" style="color:${color};border-color:${color}55;background:${color}18">${typeFr(type)}</span>
+        ${item.required_level?`<span class="chip" style="color:var(--gold);border-color:var(--gold-dim);background:#F5A62315">Lv. ${item.required_level}</span>`:''}
+        ${item.slots?`<span class="chip" style="color:var(--text-2);border-color:var(--border)">${item.slots} slot${item.slots>1?'s':''}</span>`:''}
+        ${!isCard && slotLabel !== '—' ? `<span class="chip" style="color:var(--rune-blue);border-color:var(--rune-blue)55;background:var(--rune-blue)18">${slotLabel}</span>` : ''}
+      </div>
+      ${isCard && slotLabel !== '—' ? `<span class="chip" style="display:inline-flex;align-items:center;gap:5px;color:var(--gold);border-color:var(--gold)88;background:var(--gold)22;padding:5px 12px">${slotIconUrl(slotLabel)?`<img src="${slotIconUrl(slotLabel)}" style="width:22px;height:22px;image-rendering:pixelated" onerror="this.style.display='none'">`:''} <span style="font-size:12px;font-weight:700">${slotLabel}</span></span>` : ''}
     </div>
     ${item.description?`<div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Description</div></div></div>
