@@ -1278,18 +1278,15 @@ function renderMonsterDetail(m) {
     ${maps.length ? `
     <div class="detail-section" id="zones-section">
       <div class="section-header">
-        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Spawn Zones</div></div>
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Spawn Zones (${maps.length})</div></div>
       </div>
       ${sortedMaps.map(mp => `<div class="map-row clickable" onclick='openZoneDetail(${JSON.stringify(mp.name)}, ${mp.number||0})'>
-        <div class="map-thumb">
-          ${mp.img?`<img src="${mp.img}" loading="lazy" onerror="this.parentElement.textContent='🗺'">`:'🗺'}
-        </div>
+        <div class="map-thumb" style="font-size:22px;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated)">🗺</div>
         <div class="map-info">
-          <div class="map-name">${displayName(mp.name)}${mp.number?' '+mp.number:''}</div>
+          <div class="map-name">${displayName(mp.name)}</div>
           <div class="map-meta">👥 ${mp.amount} · ⏱ ${mp.frequency}</div>
         </div>
-        <div class="map-type-badge">${mp.type}</div>
-        <span class="chevron" style="margin-left:4px">›</span>
+        <svg class="chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
       </div>`).join('')}
     </div>` : `
     <div class="detail-section" id="zones-section">
