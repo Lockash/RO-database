@@ -610,8 +610,8 @@ const ELEM_TABLE = {
     undead:[0,-25,-50,-75],
   },
   ghost: {
-    neutral:[90,70,50,0],      water:[100,100,100,100], earth:[100,100,100,100],
-    fire:[100,100,100,100],    wind:[100,100,100,100],  poison:[75,50,25,0],
+    neutral:[25,25,0,0],       water:[100,100,100,100], earth:[100,100,100,100],
+    fire:[100,100,100,100],    wind:[100,100,100,100],  poison:[100,75,50,25],
     holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[125,150,175,200],
     undead:[100,100,100,100],
   },
@@ -833,11 +833,44 @@ function itemImgUrl(item) {
   if (!item.item_id) return null;
   return `https://db.irowiki.org/image/item/${item.item_id}.png`;
 }
+// Alternative source tried automatically if the primary URL fails to load
+function itemImgUrlFallback(item) {
+  if (!item.item_id) return null;
+  return `https://static.divine-pride.net/images/items/item/${item.item_id}.png`;
+}
+// Global onerror handler: tries the secondary source once, then falls back to emoji.
+window.__imgFallback = function(img) {
+  const fallback = img.getAttribute('data-fallback');
+  const tried = img.getAttribute('data-tried-fallback');
+  if (fallback && !tried) {
+    img.setAttribute('data-tried-fallback', '1');
+    img.src = fallback;
+    return;
+  }
+  const emoji = img.getAttribute('data-emoji') || '📦';
+  img.style.display = 'none';
+  if (img.parentElement) img.parentElement.textContent = emoji;
+};
+// Builds an <img> tag with automatic fallback to a second image source,
+// then to the given emoji placeholder if both fail.
+function imgWithFallback(item, emoji, extraAttrs) {
+  const primary = itemImgUrl(item);
+  const secondary = itemImgUrlFallback(item);
+  if (!primary) return emoji;
+  const attrs = extraAttrs || '';
+  return `<img src="${primary}" ${attrs} loading="lazy" data-fallback="${secondary || ''}" data-emoji="${emoji.replace(/"/g,'&quot;')}" onerror="window.__imgFallback(this)">`;
+}
 function dropImgUrl(drop) {
   if (drop.img) return drop.img;
   const matched = findItemByName(drop.name);
   if (matched) return itemImgUrl(matched);
   return null;
+}
+function dropImgWithFallback(drop, emoji) {
+  const matched = findItemByName(drop.name);
+  if (matched) return imgWithFallback(matched, emoji);
+  if (drop.img) return `<img src="${drop.img}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='${emoji}'">`;
+  return emoji;
 }
 function modesFr(m) {
   const map = {
@@ -1117,7 +1150,7 @@ function buildItemCard(item) {
   div.className = 'monster-card';
   div.innerHTML = `
     <div class="sprite-box">
-      ${itemImgUrl(item) ? `<img src="${itemImgUrl(item)}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">` : '📦'}
+      ${imgWithFallback(item, '📦')}
     </div>
     <div class="card-info">
       <div class="card-name">${name}</div>
@@ -1258,14 +1291,14 @@ function renderMonsterDetail(m) {
         const orig = d.rate;
         const pct = adjustedRate(m, orig);
         const adjusted = Math.abs(pct - orig) > 0.0001;
-        const rateColor = pct>=50?'#E84040':pct>=1?'#F5A623':'#8888AA';
-        const fmt = (v) => v>=1 ? v.toFixed(2)+'%' : v.toFixed(3)+'%';
+        const rateColor = pct>50?'#48C774':pct>=1?'#F5A623':'#E84040';
+        const fmt = (v) => v.toFixed(2)+'%';
         const matchedItem = findItemByName(d.name);
         const clickable = matchedItem ? 'clickable' : '';
         const dataAttr = matchedItem ? `data-item-id="${matchedItem.item_id}"` : '';
         return `<div class="drop-card ${clickable}" ${dataAttr}>
           <div class="drop-card-icon">
-            ${dropImgUrl(d)?`<img src="${dropImgUrl(d)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='📦'">`:'📦'}
+            ${dropImgWithFallback(d, '📦')}
           </div>
           <div class="drop-card-name">${displayName(d.name)}${matchedItem?' ›':''}</div>
           <div class="drop-card-rate" style="color:${rateColor}">
@@ -1495,7 +1528,7 @@ function renderItemDetail(item) {
     <button id="back-btn" onclick="goBack()">← Back</button>
     <div class="detail-hero">
       <div class="detail-hero-bg" style="--el-color:${color}"></div>
-      ${itemImgUrl(item)?`<img class="detail-sprite" src="${itemImgUrl(item)}" style="max-height:80px" onerror="this.style.display='none'">`:'<div style="font-size:48px;position:relative">📦</div>'}
+      ${imgWithFallback(item, '📦', 'class="detail-sprite" style="max-height:80px"')}
       <div class="detail-name">${name}</div>
       <div class="detail-id">ID : ${item.item_id}</div>
     </div>
@@ -1536,8 +1569,8 @@ function renderItemDetail(item) {
         <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Dropped By</div></div><span style="font-size:10px;color:var(--text-muted)">${droppedBy.length} mob${droppedBy.length>1?'s':''}</span></div>
         <div class="drops-grid">
         ${shown.map(({monster: mob, rate}) => {
-          const fmt = rate >= 1 ? rate.toFixed(2)+'%' : rate.toFixed(3)+'%';
-          const rateColor = rate >= 50 ? '#E84040' : rate >= 1 ? '#F5A623' : '#8888AA';
+          const fmt = rate.toFixed(2)+'%';
+          const rateColor = rate>50?'#48C774':rate>=1?'#F5A623':'#E84040';
           const mobEl = mob.type || 'neutral';
           const badge = isMvp(mob) ? `<span style="font-size:8px;color:#FFF08A">★MVP</span>` : isMiniBoss(mob) ? `<span style="font-size:8px;color:#E8A040">⚡Mini</span>` : '';
           return `<div class="drop-card clickable" data-monster-id="${mob.monster_id}">
