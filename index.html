@@ -556,9 +556,10 @@ function adjustedRate(monster, rate) {
 const ELEM_KEYS = ['neutral','water','earth','fire','wind','poison','holy','shadow','ghost','undead'];
 // Each entry: [Lv1, Lv2, Lv3, Lv4]
 // Format: ELEM_TABLE[defending][attacking] = [lv1, lv2, lv3, lv4]
-// Pre-renewal elemental table — validated against ratemyserver.net
-// Reference monsters: Osiris (Undead Lv4), White Lady (Wind Lv3), Salamander (Fire Lv3)
-// Row = defending element, Column = attacking element, values [Lv1, Lv2, Lv3, Lv4]
+// Pre-renewal elemental table — fully validated against ratemyserver.net
+// References: BabyDesertWolf(Fire1), Blazer(Fire2), Salamander(Fire3), Horong(Fire4),
+//             WhiteLady(Wind3), Osiris(Undead4)
+// Row = defending element, Column = attacking element, values [Lv1,Lv2,Lv3,Lv4]
 const ELEM_TABLE = {
   neutral: {
     neutral:[100,100,100,100], water:[100,100,100,100], earth:[100,100,100,100],
@@ -579,10 +580,10 @@ const ELEM_TABLE = {
     undead:[100,100,100,100],
   },
   fire: {
-    neutral:[100,100,100,100], water:[150,175,200,225], earth:[90,80,70,60],
-    fire:[25,0,-25,-50],       wind:[100,100,100,100],  poison:[150,125,100,75],
-    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[100,100,100,100],
-    undead:[90,80,70,60],
+    neutral:[100,100,100,100], water:[150,175,200,200], earth:[50,25,0,0],
+    fire:[25,0,-25,-50],       wind:[100,100,100,100],  poison:[125,125,100,75],
+    holy:[100,100,100,75],     shadow:[100,100,100,75], ghost:[100,75,50,25],
+    undead:[100,75,50,25],
   },
   wind: {
     neutral:[100,100,100,100], water:[90,45,0,-45],     earth:[150,175,200,225],
@@ -1095,7 +1096,7 @@ function buildMonsterCard(m) {
       <div class="card-sub">ID: ${id} · Lv.${m.main_stats?.level || '?'}</div>
       <div class="card-chips">
         <span class="chip" style="color:${color};border-color:${color}44;background:${color}18">
-          ${EL_ICON[el]||''} ${elFr(el)}
+          ${EL_ICON[el]||''} ${elFr(el)} Lv${m.element_power||1}
         </span>
         ${m.race ? `<span class="chip" style="color:${raceColor(m.race)};border-color:${raceColor(m.race)}44;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
         ${isMvp(m) ? `<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22;font-weight:700">★ MVP</span>` : isMiniBoss(m) ? `<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022">⚡ Mini-Boss</span>` : ''}
@@ -1240,8 +1241,8 @@ function renderMonsterDetail(m) {
         const pct = Math.min(Math.max(v,0)/200, 1);
         return `<div class="el-row">
           <div class="el-label" style="color:${c}">${EL_ICON[k]||''} ${fr}</div>
-          <div class="el-bar-bg"><div class="el-bar-fill" style="width:${pct*100}%;background:${v>100?c:'var(--text-muted)'}"></div></div>
-          <div class="el-pct" style="color:${v>100?'#E84040':v<100?'#48C774':'var(--text-muted)'}">${v}%</div>
+          <div class="el-bar-bg"><div class="el-bar-fill" style="width:${pct*100}%;background:${v>100?'#48C774':v<100?'#E84040':'var(--text-muted)'}"></div></div>
+          <div class="el-pct" style="color:${v>100?'#48C774':v<100?'#E84040':'var(--text-muted)'}">${v}%</div>
         </div>`;
       }).join('')}
       </div>
@@ -1395,7 +1396,7 @@ function renderZoneDetail(mapName, mapNumber) {
   });
 
   const info = zoneInfo(mapName);
-  const sampleImg = monstersHere[0]?.spawn?.img;
+  const sampleMonster = monstersHere[0]?.monster;
   const totalMonsters = monstersHere.reduce((sum, x) => sum + (Number(x.spawn.amount)||0), 0);
 
   const dv = document.getElementById('detail-view');
@@ -1403,11 +1404,13 @@ function renderZoneDetail(mapName, mapNumber) {
     <button id="back-btn" onclick="goBack()">← Back</button>
 
     <div class="detail-hero">
-      <div class="map-thumb" style="width:90px;height:90px;margin:0 auto">
-        ${sampleImg?`<img src="${sampleImg}" onerror="this.parentElement.textContent='🗺'">`:'🗺'}
+      <div class="map-thumb" style="width:64px;height:64px;margin:0">
+        ${sampleMonster && monsterImgUrl(sampleMonster) ? `<img src="${monsterImgUrl(sampleMonster)}" onerror="this.parentElement.textContent='🗺'">` : '🗺'}
       </div>
-      <div class="detail-name">${displayName(mapName)}${mapNumber?' '+mapNumber:''}</div>
-      <div class="detail-id">${monstersHere.length} espèce${monstersHere.length>1?'s':''} · ${totalMonsters} monstres au total</div>
+      <div class="detail-hero-info">
+        <div class="detail-name">${displayName(mapName)}${mapNumber?' '+mapNumber:''}</div>
+        <div class="detail-id">${monstersHere.length} species · ${totalMonsters} mobs total</div>
+      </div>
     </div>
 
     <div class="detail-section">
@@ -1419,14 +1422,14 @@ function renderZoneDetail(mapName, mapNumber) {
 
     <div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Monsters in this zone</div></div></div>
-      ${monstersHere.length === 0 ? `<div class="empty-msg">Aucun autre monstre trouvé pour cette carte dans la base.</div>` :
+      ${monstersHere.length === 0 ? `<div class="empty-msg">No other monster found for this map.</div>` :
         monstersHere.map(({monster: m2, spawn}) => {
           const el2 = m2.type || 'neutral';
           const c2 = elColor(el2);
           const mvp2 = isMvp(m2);
           return `<div class="monster-card" onclick="openMonsterDetail(${m2.monster_id})">
             <div class="sprite-box">
-              ${m2.gif?`<img src="${m2.gif}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">`:'🐾'}
+              ${monsterImgUrl(m2)?`<img src="${monsterImgUrl(m2)}" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='🐾'">`:'🐾'}
             </div>
             <div class="card-info">
               <div class="card-name">${displayName(m2.monster_info)}${mvp2?' ★':''}</div>
