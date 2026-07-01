@@ -586,9 +586,9 @@ const ELEM_TABLE = {
     undead:[100,75,50,25],
   },
   wind: {
-    neutral:[100,100,100,100], water:[90,45,0,-45],     earth:[150,175,200,225],
-    fire:[100,100,100,100],    wind:[25,0,-25,-50],     poison:[150,125,100,75],
-    holy:[100,100,100,100],    shadow:[100,100,100,100], ghost:[100,75,50,25],
+    neutral:[100,100,100,100], water:[50,25,0,0],       earth:[150,175,200,200],
+    fire:[100,100,100,100],    wind:[25,0,-25,-50],     poison:[125,125,100,75],
+    holy:[100,100,100,75],     shadow:[100,100,100,75], ghost:[100,75,50,25],
     undead:[100,75,50,25],
   },
   poison: {
@@ -848,8 +848,9 @@ window.__imgFallback = function(img) {
     return;
   }
   const emoji = img.getAttribute('data-emoji') || '📦';
-  img.style.display = 'none';
-  if (img.parentElement) img.parentElement.textContent = emoji;
+  const span = document.createElement('span');
+  span.textContent = emoji;
+  img.replaceWith(span);
 };
 // Builds an <img> tag with automatic fallback to a second image source,
 // then to the given emoji placeholder if both fail.
@@ -1215,16 +1216,7 @@ function renderMonsterDetail(m) {
 
   // Résumé respawn / quantité (sous le sprite) — trié par qté décroissante
   const sortedMaps = [...maps].sort((a, b) => (Number(b.amount)||0) - (Number(a.amount)||0));
-  let respawnHtml = '';
-  if (maps.length > 0) {
-    const totalAmount = maps.reduce((sum, mp) => sum + (Number(mp.amount) || 0), 0);
-    const freqs = [...new Set(maps.map(mp => mp.frequency).filter(Boolean))];
-    respawnHtml = `<div class="respawn-summary">
-      <span>👥 ${totalAmount} sur la${maps.length>1?'s':''} carte${maps.length>1?'s':''}</span>
-      <span>⏱ Respawn ${freqs[0] || '?'}${freqs.length>1?` (+${freqs.length-1})`:''}</span>
-      ${maps.length>1?`<span class="zone-count-link" onclick="scrollToZones()">🗺 ${maps.length} zones ›</span>`:''}
-    </div>`;
-  }
+  const totalAmount = maps.reduce((sum, mp) => sum + (Number(mp.amount) || 0), 0);
 
   const dv = document.getElementById('detail-view');
   dv.innerHTML = `
@@ -1235,7 +1227,7 @@ function renderMonsterDetail(m) {
       ${monsterImgUrl(m) ? `<img class="detail-sprite" src="${monsterImgUrl(m)}" alt="${name}" onerror="this.style.display='none'">` : '<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0">🐾</div>'}
       <div class="detail-hero-info">
         <div class="detail-name">${name}${m._variantIdx > 1 ? ` <span style="font-size:8px;color:var(--text-muted)">(v${m._variantIdx})</span>` : ''}</div>
-        <div class="detail-id">ID: ${m.monster_id}</div>
+        <div class="detail-id" style="font-size:12px;color:var(--rune-blue);font-weight:600">ID ${m.monster_id}${maps.length > 0 ? ` · <span style="color:var(--text-muted);font-weight:400;font-size:11px">👥 ${totalAmount} on all maps</span>` : ''}</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">
           <span class="chip" style="font-size:9px;padding:2px 7px;color:${elColor_};border-color:${elColor_}55;background:${elColor_}18">${EL_ICON[el]||''} ${elFr(el)} Lv.${m.element_power||1}</span>
           ${m.race ? `<span class="chip" style="font-size:9px;padding:2px 7px;color:${raceColor(m.race)};border-color:${raceColor(m.race)}55;background:${raceColor(m.race)}18">${raceFr(m.race)}</span>` : ''}
@@ -1244,7 +1236,6 @@ function renderMonsterDetail(m) {
         </div>
       </div>
     </div>
-    ${respawnHtml}
 
     <div class="detail-section">
       <div class="section-header"><div class="section-header-left"><div class="section-bar"></div><div class="section-title">Stats</div></div></div>
@@ -1264,7 +1255,7 @@ function renderMonsterDetail(m) {
     ${elEntries.length ? `
     <div class="detail-section">
       <div class="section-header">
-        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Resistance</div></div>
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Elemental Weaknesses &amp; Resistances</div></div>
         ${Object.keys(ed).length === 0 ? `<span style="font-size:9px;color:var(--text-muted)">computed</span>` : ''}
       </div>
       <div class="stats-card" style="padding:10px 12px">
@@ -1291,7 +1282,7 @@ function renderMonsterDetail(m) {
         const orig = d.rate;
         const pct = adjustedRate(m, orig);
         const adjusted = Math.abs(pct - orig) > 0.0001;
-        const rateColor = pct>50?'#48C774':pct>=1?'#F5A623':'#E84040';
+        const rateColor = pct>50?'#48C774':pct>10?'var(--text-2)':pct>=1?'#F5A623':'#E84040';
         const fmt = (v) => v.toFixed(2)+'%';
         const matchedItem = findItemByName(d.name);
         const clickable = matchedItem ? 'clickable' : '';
@@ -1312,7 +1303,7 @@ function renderMonsterDetail(m) {
     ${maps.length ? `
     <div class="detail-section" id="zones-section">
       <div class="section-header">
-        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Spawn Zones (${maps.length})</div></div>
+        <div class="section-header-left"><div class="section-bar"></div><div class="section-title">Maps (${maps.length})</div></div>
       </div>
       ${sortedMaps.map(mp => `<div class="map-row clickable" onclick='openZoneDetail(${JSON.stringify(mp.name)}, ${mp.number||0})'>
         <div class="map-thumb" style="font-size:22px;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated)">🗺</div>
@@ -1468,7 +1459,8 @@ function renderZoneDetail(mapName, mapNumber) {
               <div class="card-name">${displayName(m2.monster_info)}${mvp2?' ★':''}</div>
               <div class="card-sub">👥 ${spawn.amount} · ⏱ ${spawn.frequency}</div>
               <div class="card-chips">
-                <span class="chip" style="color:${c2};border-color:${c2}44;background:${c2}18">${EL_ICON[el2]||''} ${elFr(el2)}</span>
+                <span class="chip" style="color:${c2};border-color:${c2}44;background:${c2}18">${EL_ICON[el2]||''} ${elFr(el2)} Lv${m2.element_power||1}</span>
+                ${isMvp(m2)?`<span class="chip" style="color:#FFF08A;border-color:#FFF08A88;background:#FFF08A22">★ MVP</span>`:isMiniBoss(m2)?`<span class="chip" style="color:#E8A040;border-color:#E8A04088;background:#E8A04022">⚡ Mini</span>`:''}
               </div>
             </div>
             <svg class="chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
@@ -1530,7 +1522,7 @@ function renderItemDetail(item) {
       <div class="detail-hero-bg" style="--el-color:${color}"></div>
       ${imgWithFallback(item, '📦', 'class="detail-sprite" style="max-height:80px"')}
       <div class="detail-name">${name}</div>
-      <div class="detail-id">ID : ${item.item_id}</div>
+      <div class="detail-id" style="font-size:12px;color:var(--rune-blue);font-weight:600">ID ${item.item_id}</div>
     </div>
     <div class="detail-badges" style="justify-content:space-between;align-items:center">
       <div style="display:flex;gap:5px;flex-wrap:wrap">
@@ -1570,7 +1562,7 @@ function renderItemDetail(item) {
         <div class="drops-grid">
         ${shown.map(({monster: mob, rate}) => {
           const fmt = rate.toFixed(2)+'%';
-          const rateColor = rate>50?'#48C774':rate>=1?'#F5A623':'#E84040';
+          const rateColor = rate>50?'#48C774':rate>10?'var(--text-2)':rate>=1?'#F5A623':'#E84040';
           const mobEl = mob.type || 'neutral';
           const badge = isMvp(mob) ? `<span style="font-size:8px;color:#FFF08A">★MVP</span>` : isMiniBoss(mob) ? `<span style="font-size:8px;color:#E8A040">⚡Mini</span>` : '';
           return `<div class="drop-card clickable" data-monster-id="${mob.monster_id}">
